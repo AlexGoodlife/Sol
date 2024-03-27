@@ -1,7 +1,6 @@
 import tAsm.*;
 import org.antlr.v4.runtime.*;
 import org.antlr.v4.runtime.tree.*;
-import tAsm.TasmParser;
 
 import java.io.*;
 import java.util.*;
@@ -18,122 +17,83 @@ public class tCompiler extends TasmBaseListener
     private static final String DEFAULT_BYTECODES_FILE_NAME = "a.tbc";
     private static final boolean DEFAULT_SHOW_ASSEMBLY = false;
 
-    private ArrayDeque<Instruction> instructions;
     private String sourceFileName;
     private String byteCodesFileName;
     private boolean showAssembly;
-
-    private Stack<Instruction> instructionStack;
+    private ArrayDeque<Instruction> instructions;
     private List<Object> constantPool;
-
-    private HashMap<String, InstructionCode> simpleInstructions;
+    private HashMap<String, InstructionCode> nameToCodes;
+    private int instructionCounter;
+    private HashMap<String, Integer> labelsToInstruction;
 
     public tCompiler()
     {
         this.sourceFileName = DEFAULT_SOURCE_FILE_NAME;
         this.byteCodesFileName = DEFAULT_BYTECODES_FILE_NAME;
         this.showAssembly = DEFAULT_SHOW_ASSEMBLY;
-        this.instructionStack = new Stack<>();
-        this.simpleInstructions = new HashMap<>();
-        this.constantPool = new ArrayList<>();
-        Arrays.stream(InstructionCode.values()).forEach((code)-> this.simpleInstructions.put(code.name().toLowerCase(),code));
     }
-
-    /**
-     * {@inheritDoc}
-     *
-     * <p>The default implementation does nothing.</p>
-     */
-    @Override public void exitProgram(TasmParser.ProgramContext ctx) { }
-
 
     @Override
-    public void exitLine(TasmParser.LineContext ctx){
-
+    public void exitLine(TasmParser.LineContext ctx)
+    {
+        if (ctx.LABEL() != null)
+            this.labelsToInstruction.put(ctx.LABEL().getText(), this.instructionCounter);
+        if (ctx.instruction() != null)
+            this.instructionCounter++;
     }
 
-    /**
-     * {@inheritDoc}
-     *
-     * <p>The default implementation does nothing.</p>
-     */
-    @Override public void exitLoadInt(TasmParser.LoadIntContext ctx) {
-        this.instructionStack.push(new Instruction(InstructionCode.ICONST,Integer.valueOf(ctx.INT().getText())));
+    @Override
+    public void exitLoadInt(TasmParser.LoadIntContext ctx)
+    {
+        this.instructions.push(new Instruction(InstructionCode.ICONST, Integer.valueOf(ctx.INT().getText())));
     }
 
-
-    /**
-     * {@inheritDoc}
-     *
-     * <p>The default implementation does nothing.</p>
-     */
-    @Override public void exitLoadDouble(TasmParser.LoadDoubleContext ctx) {
-        this.constantPool.add(Double.valueOf(ctx.DOUBLE().getText()));
-        this.instructionStack.push(new Instruction(InstructionCode.DCONST, this.constantPool.size()- 1));
+    @Override
+    public void exitLoadDouble(TasmParser.LoadDoubleContext ctx)
+    {
+        this.constantPool.add(Double.valueOf(ctx.value.getText()));
+        this.instructions.push(new Instruction(InstructionCode.DCONST, this.constantPool.size() - 1));
     }
 
-
-    /**
-     * {@inheritDoc}
-     *
-     * <p>The default implementation does nothing.</p>
-     */
-    @Override public void exitLoadString(TasmParser.LoadStringContext ctx) {
-        this.constantPool.add(ctx.STRING().getText().replaceAll("\"" ,""));
-        this.instructionStack.push(new Instruction(InstructionCode.SCONST, this.constantPool.size()- 1));
+    @Override
+    public void exitLoadString(TasmParser.LoadStringContext ctx)
+    {
+        this.constantPool.add(ctx.STRING().getText().replaceAll("\"", ""));
+        this.instructions.push(new Instruction(InstructionCode.SCONST, this.constantPool.size() - 1));
     }
 
-
-    /**
-     * {@inheritDoc}
-     *
-     * <p>The default implementation does nothing.</p>
-     */
-    @Override public void exitLoadBool(TasmParser.LoadBoolContext ctx) {
+    @Override
+    public void exitLoadBool(TasmParser.LoadBoolContext ctx)
+    {
         int boolValue = Boolean.parseBoolean(ctx.BOOL().getText()) ? 1 : 0;
-        this.instructionStack.push(new Instruction(InstructionCode.ICONST,boolValue));
+        this.instructions.push(new Instruction(InstructionCode.ICONST, boolValue));
     }
 
+    @Override
+    public void exitJump(TasmParser.JumpContext ctx)
+    {
+        int operand = this.labelsToInstruction.get(ctx.LABEL().getText());
+        this.instructions.push(new Instruction(this.nameToCodes.get(ctx.jump.getText()), operand));
+    }
 
-    /**
-     * {@inheritDoc}
-     *
-     * <p>The default implementation does nothing.</p>
-     */
-    @Override public void exitGlobal(TasmParser.GlobalContext ctx) {
-        String op = ctx.operation.getText();
+    @Override
+    public void exitGlobal(TasmParser.GlobalContext ctx)
+    {
         int operand = Integer.parseInt(ctx.INT().getText());
-        if(op.equals(InstructionCode.GALLOC.name().toLowerCase())){
-            this.instructionStack.push(new Instruction(InstructionCode.GALLOC, operand));
-        }
-        else if(op.equals(InstructionCode.GSTORE.name().toLowerCase())){
-            this.instructionStack.push(new Instruction(InstructionCode.GSTORE, operand));
-        }
-        else{
-            this.instructionStack.push(new Instruction(InstructionCode.GLOAD, operand));
-        }
+        this.instructions.push(new Instruction(this.nameToCodes.get(ctx.global.getText()), operand));
     }
 
-
-    /**
-     * {@inheritDoc}
-     *
-     * <p>The default implementation does nothing.</p>
-     */
-    @Override public void exitSimpleInstruction(TasmParser.SimpleInstructionContext ctx) {
-        this.instructionStack.push(new Instruction(this.simpleInstructions.get(ctx.SIMPLE_INSTRUCTION().getText())));
+    @Override
+    public void exitSimpleInstruction(TasmParser.SimpleInstructionContext ctx)
+    {
+        this.instructions.push(new Instruction(this.nameToCodes.get(ctx.SIMPLE_INSTRUCTION().getText())));
     }
-
 
     public void compile(String[] args) throws IOException
     {
         this.parseArguments(args);
         this.initCompiler();
-        this.instructionStack.forEach(System.out::println);
-        this.constantPool.forEach((obj) -> {
-            System.out.println(obj);
-        } );
-        //this.writeByteCodes();
+        this.writeByteCodes();
     }
 
     private void parseArguments(String[] args)
@@ -154,7 +114,7 @@ public class tCompiler extends TasmBaseListener
 
     private void initCompiler() throws IOException
     {
-        this.instructions = new ArrayDeque<>();
+        this.initCompilerVariables();
         InputStream inputStream = this.sourceFileName != null ? new FileInputStream(this.sourceFileName) : System.in;
         CharStream input = CharStreams.fromStream(inputStream);
         TasmLexer lexer = new TasmLexer(input);
@@ -165,9 +125,25 @@ public class tCompiler extends TasmBaseListener
         walker.walk(this, tree);
     }
 
+    private void initCompilerVariables()
+    {
+        this.instructions = new ArrayDeque<>();
+        this.constantPool = new ArrayList<>();
+        this.nameToCodes = new HashMap<>();
+        Arrays.stream(InstructionCode.values()).forEach((code) -> this.nameToCodes.put(code.name().toLowerCase(), code));
+        this.instructionCounter = 0;
+        this.labelsToInstruction = new HashMap<>();
+    }
+
     private void writeByteCodes() throws IOException
     {
         DataOutputStream byteCodes = new DataOutputStream(new FileOutputStream(this.byteCodesFileName));
+        this.writeInstructions(byteCodes);
+        this.writeConstantPool(byteCodes);
+    }
+
+    private void writeInstructions(DataOutputStream byteCodes) throws IOException
+    {
         while (!this.instructions.isEmpty())
         {
             Instruction instruction = this.instructions.removeLast();
@@ -178,6 +154,22 @@ public class tCompiler extends TasmBaseListener
             if (this.showAssembly)
                 System.out.println(instruction);
         }
+        byteCodes.writeByte(InstructionCode.END.ordinal());
+    }
+
+    private void writeConstantPool(DataOutputStream byteCodes) throws IOException
+    {
+        for (Object o : this.constantPool)
+            if (o instanceof Double doubleValue)
+            {
+                byteCodes.writeInt(8);
+                byteCodes.writeDouble(doubleValue);
+            }
+            else if (o instanceof String string)
+            {
+                byteCodes.writeInt(2 * string.length());
+                byteCodes.writeChars(string);
+            }
     }
 
     public static void main(String[] args) throws IOException

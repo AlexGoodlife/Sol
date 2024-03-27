@@ -7,7 +7,7 @@ line:   ((LABEL':')?instruction)? EOL
         ;
 
 instruction:    instructionWithArguments
-                | simpleInstruction    //Will need hash map or a giant switch case statement later
+                | simpleInstruction
                 ;
 
 instructionWithArguments:   LOAD_INT INT                                                    #LoadInt
@@ -15,10 +15,10 @@ instructionWithArguments:   LOAD_INT INT                                        
                             | LOAD_STRING STRING                                            #LoadString
                             | LOAD_BOOL BOOL                                                #LoadBool
                             | jump = (UJUMP | CJUMP_TRUE | CJUMP_FALSE) LABEL               #Jump
-                            | operation = (GLOBAL_ALLOC | GLOBAL_LOAD | GLOBAL_STORE) INT   #Global
+                            | global = (GLOBAL_ALLOC | GLOBAL_LOAD | GLOBAL_STORE) INT      #Global
                             ;
 
-simpleInstruction:  SIMPLE_INSTRUCTION
+simpleInstruction:  SIMPLE_INSTRUCTION  //Will need hash map or a giant switch case statement later
                     ;
 
 //Language types

@@ -1,4 +1,4 @@
-// Generated from /home/alex/uni/COP_2324/cop_projeto/P1/src/Tasm.g4 by ANTLR 4.13.1
+// Generated from C:/Users/Acer/Desktop/Programations/cop_projeto/P1/src/Tasm.g4 by ANTLR 4.13.1
 package tAsm;
 import org.antlr.v4.runtime.atn.*;
 import org.antlr.v4.runtime.dfa.DFA;
@@ -418,7 +418,7 @@ public class TasmParser extends Parser {
 	}
 	@SuppressWarnings("CheckReturnValue")
 	public static class GlobalContext extends InstructionWithArgumentsContext {
-		public Token operation;
+		public Token global;
 		public TerminalNode INT() { return getToken(TasmParser.INT, 0); }
 		public TerminalNode GLOBAL_ALLOC() { return getToken(TasmParser.GLOBAL_ALLOC, 0); }
 		public TerminalNode GLOBAL_LOAD() { return getToken(TasmParser.GLOBAL_LOAD, 0); }
@@ -524,10 +524,10 @@ public class TasmParser extends Parser {
 				enterOuterAlt(_localctx, 6);
 				{
 				setState(40);
-				((GlobalContext)_localctx).operation = _input.LT(1);
+				((GlobalContext)_localctx).global = _input.LT(1);
 				_la = _input.LA(1);
 				if ( !((((_la) & ~0x3f) == 0 && ((1L << _la) & 114688L) != 0)) ) {
-					((GlobalContext)_localctx).operation = (Token)_errHandler.recoverInline(this);
+					((GlobalContext)_localctx).global = (Token)_errHandler.recoverInline(this);
 				}
 				else {
 					if ( _input.LA(1)==Token.EOF ) matchedEOF = true;
