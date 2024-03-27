@@ -1,4 +1,4 @@
-// Generated from /home/alex/uni/COP_2324/cop_projeto/P1/src/Tasm.g4 by ANTLR 4.13.1
+// Generated from C:/Users/Acer/Desktop/Programations/cop_projeto/P1/src/Tasm.g4 by ANTLR 4.13.1
 package tAsm;
 
 import org.antlr.v4.runtime.ParserRuleContext;
@@ -84,18 +84,6 @@ public class TasmBaseListener implements TasmListener {
 	 * <p>The default implementation does nothing.</p>
 	 */
 	@Override public void exitLoadString(TasmParser.LoadStringContext ctx) { }
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation does nothing.</p>
-	 */
-	@Override public void enterLoadBool(TasmParser.LoadBoolContext ctx) { }
-	/**
-	 * {@inheritDoc}
-	 *
-	 * <p>The default implementation does nothing.</p>
-	 */
-	@Override public void exitLoadBool(TasmParser.LoadBoolContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *

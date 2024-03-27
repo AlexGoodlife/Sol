@@ -1,3 +1,6 @@
 sconst "Hello World"
 sprint
+dconst 3.1415
+tconst
+fconst
 halt

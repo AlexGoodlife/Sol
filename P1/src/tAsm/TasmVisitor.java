@@ -1,4 +1,4 @@
-// Generated from /home/alex/uni/COP_2324/cop_projeto/P1/src/Tasm.g4 by ANTLR 4.13.1
+// Generated from C:/Users/Acer/Desktop/Programations/cop_projeto/P1/src/Tasm.g4 by ANTLR 4.13.1
 package tAsm;
 import org.antlr.v4.runtime.tree.ParseTreeVisitor;
 
@@ -49,13 +49,6 @@ public interface TasmVisitor<T> extends ParseTreeVisitor<T> {
 	 * @return the visitor result
 	 */
 	T visitLoadString(TasmParser.LoadStringContext ctx);
-	/**
-	 * Visit a parse tree produced by the {@code LoadBool}
-	 * labeled alternative in {@link TasmParser#instructionWithArguments}.
-	 * @param ctx the parse tree
-	 * @return the visitor result
-	 */
-	T visitLoadBool(TasmParser.LoadBoolContext ctx);
 	/**
 	 * Visit a parse tree produced by the {@code Jump}
 	 * labeled alternative in {@link TasmParser#instructionWithArguments}.

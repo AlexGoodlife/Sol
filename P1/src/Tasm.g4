@@ -1,9 +1,9 @@
 grammar Tasm;
 
-program:    (line (EOL+ line)* EOL*)? EOF
+program:    line (EOL+ line)* EOL* EOF
             ;
 
-line:   ((LABEL (',' LABEL)*':')?instruction)
+line:   (LABEL (',' LABEL)* ':')? instruction
         ;
 
 instruction:    instructionWithArguments
@@ -13,7 +13,6 @@ instruction:    instructionWithArguments
 instructionWithArguments:   LOAD_INT INT                                                    #LoadInt
                             | LOAD_DOUBLE value = (DOUBLE | INT)                            #LoadDouble
                             | LOAD_STRING STRING                                            #LoadString
-                            | LOAD_BOOL BOOL                                                #LoadBool
                             | jump = (UJUMP | CJUMP_TRUE | CJUMP_FALSE) LABEL               #Jump
                             | global = (GLOBAL_ALLOC | GLOBAL_LOAD | GLOBAL_STORE) INT      #Global
                             ;
@@ -33,7 +32,6 @@ NULL: 'NIL';
 LOAD_INT: 'iconst';
 LOAD_DOUBLE: 'dconst';
 LOAD_STRING: 'sconst';
-LOAD_BOOL: 'bconst';
 //Jump instructions
 UJUMP: 'jump';
 CJUMP_TRUE: 'jumpt';
@@ -53,13 +51,13 @@ SIMPLE_INSTRUCTION: //Int instructions
                     //String instructions
                     | 'sprint' | 'sadd' | 'seq' | 'sneq'
                     //Bool instructions
-                    | 'bprint' | 'beq' | 'bneq' | 'and' | 'or' | 'not' | 'btos'
+                    | 'tconst' | 'fconst' | 'bprint' | 'beq' | 'bneq' | 'and' | 'or' | 'not' | 'btos'
                     //Halt instruction
                     | 'halt'
                     ;
 
 LABEL: ('_'|LETTER)('_'|LETTER|DIGIT)*;
-EOL: '\r'? '\n';
+EOL: '\r'?'\n';
 
 WS: [ \r\t]+ -> skip;
 

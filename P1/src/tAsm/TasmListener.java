@@ -1,4 +1,4 @@
-// Generated from /home/alex/uni/COP_2324/cop_projeto/P1/src/Tasm.g4 by ANTLR 4.13.1
+// Generated from C:/Users/Acer/Desktop/Programations/cop_projeto/P1/src/Tasm.g4 by ANTLR 4.13.1
 package tAsm;
 import org.antlr.v4.runtime.tree.ParseTreeListener;
 
@@ -73,18 +73,6 @@ public interface TasmListener extends ParseTreeListener {
 	 * @param ctx the parse tree
 	 */
 	void exitLoadString(TasmParser.LoadStringContext ctx);
-	/**
-	 * Enter a parse tree produced by the {@code LoadBool}
-	 * labeled alternative in {@link TasmParser#instructionWithArguments}.
-	 * @param ctx the parse tree
-	 */
-	void enterLoadBool(TasmParser.LoadBoolContext ctx);
-	/**
-	 * Exit a parse tree produced by the {@code LoadBool}
-	 * labeled alternative in {@link TasmParser#instructionWithArguments}.
-	 * @param ctx the parse tree
-	 */
-	void exitLoadBool(TasmParser.LoadBoolContext ctx);
 	/**
 	 * Enter a parse tree produced by the {@code Jump}
 	 * labeled alternative in {@link TasmParser#instructionWithArguments}.

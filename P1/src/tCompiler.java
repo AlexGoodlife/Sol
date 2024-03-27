@@ -3,6 +3,7 @@ import org.antlr.v4.runtime.*;
 import org.antlr.v4.runtime.tree.*;
 
 import java.io.*;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 
 public class tCompiler extends TasmBaseListener
@@ -24,7 +25,6 @@ public class tCompiler extends TasmBaseListener
     private List<Object> constantPool;
     private HashMap<String, InstructionCode> nameToCodes;
     private HashMap<String, Integer> labelsToInstruction;
-
     private ErrorReporter errorReporter;
 
     public tCompiler()
@@ -32,13 +32,6 @@ public class tCompiler extends TasmBaseListener
         this.sourceFileName = DEFAULT_SOURCE_FILE_NAME;
         this.byteCodesFileName = DEFAULT_BYTECODES_FILE_NAME;
         this.showAssembly = DEFAULT_SHOW_ASSEMBLY;
-    }
-
-    @Override
-    public void exitLine(TasmParser.LineContext ctx)
-    {
-        //if (ctx.LABEL() != null)
-            //this.labelsToInstruction.put(ctx.LABEL().getText(), this.instructions.size()-1);
     }
 
     @Override
@@ -59,13 +52,6 @@ public class tCompiler extends TasmBaseListener
     {
         this.constantPool.add(ctx.STRING().getText().replaceAll("\"", ""));
         this.instructions.push(new Instruction(InstructionCode.SCONST, this.constantPool.size() - 1));
-    }
-
-    @Override
-    public void exitLoadBool(TasmParser.LoadBoolContext ctx)
-    {
-        int boolValue = Boolean.parseBoolean(ctx.BOOL().getText()) ? 1 : 0;
-        this.instructions.push(new Instruction(InstructionCode.ICONST, boolValue));
     }
 
     @Override
@@ -92,11 +78,11 @@ public class tCompiler extends TasmBaseListener
         this.instructions.push(new Instruction(this.nameToCodes.get(ctx.SIMPLE_INSTRUCTION().getText())));
     }
 
-    public void compile(String[] args) throws Exception
+    public void compile(String[] args) throws IOException
     {
         this.parseArguments(args);
         this.initCompiler();
-        if(!checkForErrors())
+        if(!this.hasSemanticErrors())
             this.writeByteCodes();
     }
 
@@ -106,27 +92,23 @@ public class tCompiler extends TasmBaseListener
             throw new IllegalArgumentException("Invalid arguments");
 
         for (int i = 0; i < args.length; i++)
-        {
-            if (args[i].equals(SOURCE_FILE_FLAG))
-                this.sourceFileName = args[++i];
-            else if (args[i].equals(BYTECODES_FILE_FLAG))
-                this.byteCodesFileName = args[++i];
-            else if(args[i].equals(SHOW_ASSEMBLY_FLAG))
-                this.showAssembly = true;
-            else {
-                throw new IllegalArgumentException("Invalid arguments");
+            switch (args[i])
+            {
+                case SOURCE_FILE_FLAG:
+                    this.sourceFileName = args[++i];
+                    break;
+                case BYTECODES_FILE_FLAG:
+                    this.byteCodesFileName = args[++i];
+                    break;
+                case SHOW_ASSEMBLY_FLAG:
+                    this.showAssembly = true;
+                    break;
+                default:
+                    throw new IllegalArgumentException("Invalid flag");
             }
-        }
     }
 
-    private boolean checkForErrors(){
-        if(this.errorReporter.getErrorCount() > 0){
-            this.errorReporter.getErrors().forEach((e) -> System.err.println("ERROR: " + e.getCtx() + " " + e.getMessage()));
-            return true;
-        }
-        return false;
-    }
-    private void initCompiler() throws Exception
+    private void initCompiler() throws IOException
     {
         this.initCompilerVariables();
         InputStream inputStream = this.sourceFileName != null ? new FileInputStream(this.sourceFileName) : System.in;
@@ -138,7 +120,6 @@ public class tCompiler extends TasmBaseListener
         tSemanticChecker checker = new tSemanticChecker(this.errorReporter);
         checker.semanticCheck(tree);
         this.labelsToInstruction = checker.getLabelsToInstruction();
-        if(checkForErrors()) return;
         ParseTreeWalker walker = new ParseTreeWalker();
         walker.walk(this, tree);
     }
@@ -149,8 +130,15 @@ public class tCompiler extends TasmBaseListener
         this.constantPool = new ArrayList<>();
         this.nameToCodes = new HashMap<>();
         Arrays.stream(InstructionCode.values()).forEach((code) -> this.nameToCodes.put(code.name().toLowerCase(), code));
-        this.labelsToInstruction = new HashMap<>();
         this.errorReporter = new ErrorReporter();
+    }
+
+    private boolean hasSemanticErrors()
+    {
+        boolean hasErrors = this.errorReporter.getErrorCount() > 0;
+        if (hasErrors)
+            this.errorReporter.getErrors().forEach((e) -> System.err.println("ERROR: " + e.getCtx() + " " + e.getMessage()));
+        return hasErrors;
     }
 
     private void writeByteCodes() throws IOException
@@ -180,23 +168,21 @@ public class tCompiler extends TasmBaseListener
         for (Object o : this.constantPool)
             if (o instanceof Double doubleValue)
             {
-                byteCodes.writeInt(8);
+                byteCodes.writeByte(TypeCode.DOUBLE.ordinal());
                 byteCodes.writeDouble(doubleValue);
             }
             else if (o instanceof String string)
             {
-                byteCodes.writeInt(2 * string.length());
-                byteCodes.writeChars(string);
+                byteCodes.writeByte(TypeCode.STRING.ordinal());
+                byte[] stringBytes = string.getBytes(StandardCharsets.UTF_8);
+                byteCodes.writeInt(stringBytes.length);
+                byteCodes.write(stringBytes);
             }
     }
 
     public static void main(String[] args) throws IOException
     {
         tCompiler compiler = new tCompiler();
-        try {
-            compiler.compile(args);
-        } catch (Exception e) {
-            System.err.println(e.getMessage());
-        }
+        compiler.compile(args);
     }
 }
