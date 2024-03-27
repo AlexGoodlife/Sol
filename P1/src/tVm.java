@@ -64,17 +64,8 @@ public class tVm
     {
         this.readInstructions();
         this.readConstantPool();
-
-        if(this.showTrace)
-        {
-            System.out.println("DISASSEMBLED INSTRUCTIONS:");
-            for(int i = 0; i < instructions.size(); i++){
-                System.out.println(i + "\t" + instructions.get(i));
-            }
-            System.out.println("DISASSEMBLED CONSTANT POOL");
-            System.out.println(this.constantPool);
-            System.out.println("-".repeat(100));
-        }
+        if (this.showTrace)
+            this.printDisassembled();
     }
 
     private void readInstructions() throws IOException
@@ -104,22 +95,34 @@ public class tVm
         }
     }
 
+    private void printDisassembled()
+    {
+        System.out.println("DISASSEMBLED INSTRUCTIONS:");
+        for(int i = 0; i < instructions.size(); i++)
+            System.out.println(i + ":\t" + instructions.get(i));
+
+        System.out.println("\nDISASSEMBLED CONSTANT POOL:");
+        System.out.println(this.constantPool);
+    }
+
     private void executeInstructions()
     {
         while (this.instructionPointer < this.instructions.size())
         {
             Instruction currentInstruction = this.instructions.get(this.instructionPointer++);
-
             if(this.showTrace)
-            {
-                String s = currentInstruction.toString();
-                String opStr = s + " ".repeat(Math.max(0, 40 - s.length()));
-                System.out.println(this.instructionPointer + ":" + "\t" + opStr + "\t" + this.executionStack);
-            }
-
+                this.printTrace(currentInstruction);
             this.executeInstruction(currentInstruction);
 
         }
+    }
+
+    private void printTrace(Instruction currentInstruction)
+    {
+        String s = currentInstruction.toString();
+        String opStr = s + " ".repeat(Math.max(0, 20 - s.length()));
+        System.out.println(this.instructionPointer + ":" + "\t" + opStr + "\tStack:\t" + this.executionStack);
+        System.out.println("\t".repeat(7) + "Global Memory:\t" + this.globalMemory + "\n");
     }
 
     private void executeInstruction(Instruction instruction)
@@ -218,8 +221,8 @@ public class tVm
                 case IMULT -> this.executionStack.push(leftInt * rightInt);
                 case IEQ -> this.executionStack.push(leftInt.equals(rightInt));
                 case INEQ -> this.executionStack.push(!leftInt.equals(rightInt));
-                case ILEQ -> this.executionStack.push(leftInt.compareTo(rightInt) <= 0 );
-                case ILT -> this.executionStack.push(leftInt.compareTo(rightInt) < 0 );
+                case ILEQ -> this.executionStack.push(rightInt.compareTo(leftInt) <= 0 );
+                case ILT -> this.executionStack.push(rightInt.compareTo(leftInt) < 0 );
             }
         }
     }
