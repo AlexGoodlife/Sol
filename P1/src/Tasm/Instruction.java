@@ -1,3 +1,5 @@
+package Tasm;
+
 public class Instruction
 {
     private final InstructionCode instruction;

@@ -1,9 +1,11 @@
+package Tasm;
+
 import org.antlr.v4.runtime.tree.ErrorNode;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.ParseTreeWalker;
 import org.antlr.v4.runtime.tree.TerminalNode;
-import tAsm.TasmBaseListener;
-import tAsm.TasmParser;
+import antlrTasm.TasmBaseListener;
+import antlrTasm.TasmParser;
 
 import java.util.HashMap;
 

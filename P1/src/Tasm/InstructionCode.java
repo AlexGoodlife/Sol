@@ -1,3 +1,5 @@
+package Tasm;
+
 public enum InstructionCode {
     ICONST,
     DCONST,
