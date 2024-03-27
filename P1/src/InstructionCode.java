@@ -41,6 +41,9 @@ public enum InstructionCode {
     BPRINT,
     BEQ,
     BNEQ,
+    AND,
+    OR,
+    NOT,
     BTOS,
     HALT,
     END

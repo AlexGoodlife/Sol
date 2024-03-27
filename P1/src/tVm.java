@@ -2,7 +2,8 @@ import java.io.*;
 import java.util.ArrayList;
 import java.util.Stack;
 
-public class tVm {
+public class tVm
+{
     public static final int MAX_ARGUMENTS_SIZE = 3;
     private static final String BYTECODES_FILE_FLAG = "-b";
     private static final String TRACE_FLAG = "--trace";
@@ -19,23 +20,27 @@ public class tVm {
     private ArrayList<Object> constantPool;
     private ArrayList<Object> globalMemory;
 
-    public tVm() {
+    public tVm()
+    {
         this.byteCodesFileName = DEFAULT_BYTECODES_FILE_NAME;
         this.showTrace = DEFAULT_SHOW_TRACE;
     }
 
-    public void execute(String[] args) throws IOException {
+    public void execute(String[] args) throws IOException
+    {
         this.parseArguments(args);
         this.initVirtualMachine();
         this.readByteCodes();
-        this.executeProgram();
+        this.executeInstructions();
     }
 
-    private void parseArguments(String[] args) {
+    private void parseArguments(String[] args)
+    {
         if (args.length == 0 || args.length > MAX_ARGUMENTS_SIZE)
             throw new IllegalArgumentException("Invalid arguments");
 
-        for (int i = 0; i < args.length; i++) {
+        for (int i = 0; i < args.length; i++)
+        {
             if (args[i].equals(BYTECODES_FILE_FLAG))
                 this.byteCodesFileName = args[++i];
             else if (args[i].equals(TRACE_FLAG))
@@ -45,8 +50,8 @@ public class tVm {
         }
     }
 
-    private void initVirtualMachine() throws IOException {
-
+    private void initVirtualMachine() throws IOException
+    {
         this.byteCodes = new DataInputStream(new FileInputStream(this.byteCodesFileName));
         this.instructions = new ArrayList<>();
         this.instructionPointer = 0;
@@ -55,10 +60,13 @@ public class tVm {
         this.globalMemory = new ArrayList<>();
     }
 
-    private void readByteCodes() throws IOException {
+    private void readByteCodes() throws IOException
+    {
         this.readInstructions();
         this.readConstantPool();
-        if(this.showTrace){
+
+        if(this.showTrace)
+        {
             System.out.println("DISASSEMBLED INSTRUCTIONS:");
             for(int i = 0; i < instructions.size(); i++){
                 System.out.println(i + "\t" + instructions.get(i));
@@ -69,7 +77,8 @@ public class tVm {
         }
     }
 
-    private void readInstructions() throws IOException {
+    private void readInstructions() throws IOException
+    {
         InstructionCode code;
         InstructionCode[] codes = InstructionCode.values();
         while ((code = codes[this.byteCodes.readByte()]) != InstructionCode.END)
@@ -79,9 +88,11 @@ public class tVm {
                 this.instructions.add(new Instruction(code));
     }
 
-    private void readConstantPool() throws IOException {
+    private void readConstantPool() throws IOException
+    {
         TypeCode[] types = TypeCode.values();
-        while (this.byteCodes.available() > 0) {
+        while (this.byteCodes.available() > 0)
+        {
             int type = this.byteCodes.readByte();
             if (types[type] == TypeCode.DOUBLE)
                 this.constantPool.add(this.byteCodes.readDouble());
@@ -93,21 +104,28 @@ public class tVm {
         }
     }
 
-    private void executeProgram() {
-        while (this.instructionPointer < this.instructions.size()){
+    private void executeInstructions()
+    {
+        while (this.instructionPointer < this.instructions.size())
+        {
             Instruction currentInstruction = this.instructions.get(this.instructionPointer++);
-            if(this.showTrace) {
+
+            if(this.showTrace)
+            {
                 String s = currentInstruction.toString();
                 String opStr = s + " ".repeat(Math.max(0, 40 - s.length()));
                 System.out.println(this.instructionPointer + ":" + "\t" + opStr + "\t" + this.executionStack);
             }
+
             this.executeInstruction(currentInstruction);
 
         }
     }
 
-    private void executeInstruction(Instruction instruction) {
-        switch (instruction.getInstruction()) {
+    private void executeInstruction(Instruction instruction)
+    {
+        switch (instruction.getInstruction())
+        {
             case ICONST -> this.executionStack.push(instruction.getOperand());
             case DCONST, SCONST -> this.executionStack.push(this.constantPool.get(instruction.getOperand()));
             case TCONST, FCONST -> this.executionStack.push(instruction.getInstruction() == InstructionCode.TCONST);
@@ -138,6 +156,10 @@ public class tVm {
                 if (this.executionStack.pop() instanceof String s)
                     System.out.println(s);
             }
+            case BPRINT -> {
+                if (this.executionStack.pop() instanceof Boolean b)
+                    System.out.println(b);
+            }
             case IUMINUS -> {
                 if (this.executionStack.pop() instanceof Integer i)
                     this.executionStack.push(-i);
@@ -145,6 +167,10 @@ public class tVm {
             case DUMINUS -> {
                 if (this.executionStack.pop() instanceof Double d)
                     this.executionStack.push(-d);
+            }
+            case NOT -> {
+                if (this.executionStack.pop() instanceof Boolean b)
+                    this.executionStack.push(!b);
             }
             case ITOD -> {
                 if (this.executionStack.pop() instanceof Integer i)
@@ -167,21 +193,25 @@ public class tVm {
         }
     }
 
-    private void executeTwoOperands(Instruction instruction) {
+    private void executeTwoOperands(Instruction instruction)
+    {
         Object right = this.executionStack.pop();
         Object left = this.executionStack.pop();
-        switch (instruction.getInstruction()) {
+        switch (instruction.getInstruction())
+        {
             case IADD, ISUB, IMOD, IMULT, IEQ, INEQ, ILEQ, ILT -> intOperation(right, left, instruction.getInstruction());
             case DADD, DSUB, DMULT, DEQ, DNEQ, DLEQ, DLT -> doubleOperation(right, left, instruction.getInstruction());
-            case SNEQ,SADD,SEQ -> stringOperation(right, left, instruction.getInstruction());
-            case BEQ,BNEQ -> booleanOperation(right, left, instruction.getInstruction());
+            case SNEQ, SADD, SEQ -> stringOperation(right, left, instruction.getInstruction());
+            case BEQ, BNEQ, AND, OR -> booleanOperation(right, left, instruction.getInstruction());
         }
     }
 
-    private void intOperation(Object left, Object right, InstructionCode op){
-
-        if (right instanceof Integer rightInt && left instanceof Integer leftInt) {
-            switch (op){
+    private void intOperation(Object left, Object right, InstructionCode op)
+    {
+        if (right instanceof Integer rightInt && left instanceof Integer leftInt)
+        {
+            switch (op)
+            {
                 case IADD -> this.executionStack.push( leftInt + rightInt );
                 case ISUB -> this.executionStack.push(leftInt - rightInt);
                 case IMOD -> this.executionStack.push(leftInt % rightInt);
@@ -190,13 +220,15 @@ public class tVm {
                 case INEQ -> this.executionStack.push(!leftInt.equals(rightInt));
                 case ILEQ -> this.executionStack.push(leftInt.compareTo(rightInt) <= 0 );
                 case ILT -> this.executionStack.push(leftInt.compareTo(rightInt) < 0 );
-
             }
         }
     }
-    private void doubleOperation(Object left, Object right, InstructionCode op){
-        if (right instanceof Double rightDouble && left instanceof Double leftDouble) {
-            switch (op){
+    private void doubleOperation(Object left, Object right, InstructionCode op)
+    {
+        if (right instanceof Double rightDouble && left instanceof Double leftDouble)
+        {
+            switch (op)
+            {
                 case DADD -> this.executionStack.push( leftDouble + rightDouble );
                 case DSUB -> this.executionStack.push(leftDouble - rightDouble);
                 case DMULT -> this.executionStack.push(leftDouble * rightDouble);
@@ -219,14 +251,19 @@ public class tVm {
             }
         }
     }
+
     private void booleanOperation(Object left, Object right, InstructionCode op){
         if (right instanceof Boolean rightBoolean && left instanceof Boolean leftBoolean) {
             switch (op){
-                case BEQ -> this.executionStack.push( leftBoolean == rightBoolean );
+
+                case BEQ -> this.executionStack.push( leftBoolean == rightBoolean);
                 case BNEQ -> this.executionStack.push(leftBoolean != rightBoolean);
+                case AND -> this.executionStack.push(leftBoolean && rightBoolean);
+                case OR -> this.executionStack.push(leftBoolean || rightBoolean);
             }
         }
     }
+
     public static void main(String[] args) throws IOException
     {
         tVm virtualMachine = new tVm();
