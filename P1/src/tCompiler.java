@@ -23,8 +23,9 @@ public class tCompiler extends TasmBaseListener
     private ArrayDeque<Instruction> instructions;
     private List<Object> constantPool;
     private HashMap<String, InstructionCode> nameToCodes;
-    private int instructionCounter;
     private HashMap<String, Integer> labelsToInstruction;
+
+    private ErrorReporter errorReporter;
 
     public tCompiler()
     {
@@ -36,10 +37,8 @@ public class tCompiler extends TasmBaseListener
     @Override
     public void exitLine(TasmParser.LineContext ctx)
     {
-        if (ctx.LABEL() != null)
-            this.labelsToInstruction.put(ctx.LABEL().getText(), this.instructionCounter);
-        if (ctx.instruction() != null)
-            this.instructionCounter++;
+        //if (ctx.LABEL() != null)
+            //this.labelsToInstruction.put(ctx.LABEL().getText(), this.instructions.size()-1);
     }
 
     @Override
@@ -72,7 +71,11 @@ public class tCompiler extends TasmBaseListener
     @Override
     public void exitJump(TasmParser.JumpContext ctx)
     {
-        int operand = this.labelsToInstruction.get(ctx.LABEL().getText());
+        Integer operand = this.labelsToInstruction.get(ctx.LABEL().getText());
+        if(operand == null){
+            this.errorReporter.reportError(ctx.getText(), "Invalid jump label");
+            return;
+        }
         this.instructions.push(new Instruction(this.nameToCodes.get(ctx.jump.getText()), operand));
     }
 
@@ -89,11 +92,12 @@ public class tCompiler extends TasmBaseListener
         this.instructions.push(new Instruction(this.nameToCodes.get(ctx.SIMPLE_INSTRUCTION().getText())));
     }
 
-    public void compile(String[] args) throws IOException
+    public void compile(String[] args) throws Exception
     {
         this.parseArguments(args);
         this.initCompiler();
-        this.writeByteCodes();
+        if(!checkForErrors())
+            this.writeByteCodes();
     }
 
     private void parseArguments(String[] args)
@@ -107,12 +111,22 @@ public class tCompiler extends TasmBaseListener
                 this.sourceFileName = args[++i];
             else if (args[i].equals(BYTECODES_FILE_FLAG))
                 this.byteCodesFileName = args[++i];
-            else
-                this.showAssembly = args[i].equals(SHOW_ASSEMBLY_FLAG);
+            else if(args[i].equals(SHOW_ASSEMBLY_FLAG))
+                this.showAssembly = true;
+            else {
+                throw new IllegalArgumentException("Invalid arguments");
+            }
         }
     }
 
-    private void initCompiler() throws IOException
+    private boolean checkForErrors(){
+        if(this.errorReporter.getErrorCount() > 0){
+            this.errorReporter.getErrors().forEach((e) -> System.err.println("ERROR: " + e.getCtx() + " " + e.getMessage()));
+            return true;
+        }
+        return false;
+    }
+    private void initCompiler() throws Exception
     {
         this.initCompilerVariables();
         InputStream inputStream = this.sourceFileName != null ? new FileInputStream(this.sourceFileName) : System.in;
@@ -121,6 +135,10 @@ public class tCompiler extends TasmBaseListener
         CommonTokenStream tokens = new CommonTokenStream(lexer);
         TasmParser parser = new TasmParser(tokens);
         ParseTree tree = parser.program();
+        tSemanticChecker checker = new tSemanticChecker(this.errorReporter);
+        checker.semanticCheck(tree);
+        this.labelsToInstruction = checker.getLabelsToInstruction();
+        if(checkForErrors()) return;
         ParseTreeWalker walker = new ParseTreeWalker();
         walker.walk(this, tree);
     }
@@ -131,8 +149,8 @@ public class tCompiler extends TasmBaseListener
         this.constantPool = new ArrayList<>();
         this.nameToCodes = new HashMap<>();
         Arrays.stream(InstructionCode.values()).forEach((code) -> this.nameToCodes.put(code.name().toLowerCase(), code));
-        this.instructionCounter = 0;
         this.labelsToInstruction = new HashMap<>();
+        this.errorReporter = new ErrorReporter();
     }
 
     private void writeByteCodes() throws IOException
@@ -175,6 +193,10 @@ public class tCompiler extends TasmBaseListener
     public static void main(String[] args) throws IOException
     {
         tCompiler compiler = new tCompiler();
-        compiler.compile(args);
+        try {
+            compiler.compile(args);
+        } catch (Exception e) {
+            System.err.println(e.getMessage());
+        }
     }
 }

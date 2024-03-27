@@ -1,4 +1,4 @@
-// Generated from C:/Users/Acer/Desktop/Programations/cop_projeto/P1/src/Tasm.g4 by ANTLR 4.13.1
+// Generated from /home/alex/uni/COP_2324/cop_projeto/P1/src/Tasm.g4 by ANTLR 4.13.1
 package tAsm;
 import org.antlr.v4.runtime.atn.*;
 import org.antlr.v4.runtime.dfa.DFA;
@@ -17,10 +17,10 @@ public class TasmParser extends Parser {
 	protected static final PredictionContextCache _sharedContextCache =
 		new PredictionContextCache();
 	public static final int
-		T__0=1, INT=2, DOUBLE=3, STRING=4, BOOL=5, NULL=6, LOAD_INT=7, LOAD_DOUBLE=8, 
-		LOAD_STRING=9, LOAD_BOOL=10, UJUMP=11, CJUMP_TRUE=12, CJUMP_FALSE=13, 
-		GLOBAL_ALLOC=14, GLOBAL_LOAD=15, GLOBAL_STORE=16, SIMPLE_INSTRUCTION=17, 
-		LABEL=18, EOL=19, WS=20, LETTER=21;
+		T__0=1, T__1=2, INT=3, DOUBLE=4, STRING=5, BOOL=6, NULL=7, LOAD_INT=8, 
+		LOAD_DOUBLE=9, LOAD_STRING=10, LOAD_BOOL=11, UJUMP=12, CJUMP_TRUE=13, 
+		CJUMP_FALSE=14, GLOBAL_ALLOC=15, GLOBAL_LOAD=16, GLOBAL_STORE=17, SIMPLE_INSTRUCTION=18, 
+		LABEL=19, EOL=20, WS=21, LETTER=22;
 	public static final int
 		RULE_program = 0, RULE_line = 1, RULE_instruction = 2, RULE_instructionWithArguments = 3, 
 		RULE_simpleInstruction = 4;
@@ -33,18 +33,18 @@ public class TasmParser extends Parser {
 
 	private static String[] makeLiteralNames() {
 		return new String[] {
-			null, "':'", null, null, null, null, "'NIL'", "'iconst'", "'dconst'", 
+			null, "','", "':'", null, null, null, null, "'NIL'", "'iconst'", "'dconst'", 
 			"'sconst'", "'bconst'", "'jump'", "'jumpt'", "'jumpf'", "'galloc'", "'gload'", 
-			"'gstore'", null, null, "'\\n'"
+			"'gstore'"
 		};
 	}
 	private static final String[] _LITERAL_NAMES = makeLiteralNames();
 	private static String[] makeSymbolicNames() {
 		return new String[] {
-			null, null, "INT", "DOUBLE", "STRING", "BOOL", "NULL", "LOAD_INT", "LOAD_DOUBLE", 
-			"LOAD_STRING", "LOAD_BOOL", "UJUMP", "CJUMP_TRUE", "CJUMP_FALSE", "GLOBAL_ALLOC", 
-			"GLOBAL_LOAD", "GLOBAL_STORE", "SIMPLE_INSTRUCTION", "LABEL", "EOL", 
-			"WS", "LETTER"
+			null, null, null, "INT", "DOUBLE", "STRING", "BOOL", "NULL", "LOAD_INT", 
+			"LOAD_DOUBLE", "LOAD_STRING", "LOAD_BOOL", "UJUMP", "CJUMP_TRUE", "CJUMP_FALSE", 
+			"GLOBAL_ALLOC", "GLOBAL_LOAD", "GLOBAL_STORE", "SIMPLE_INSTRUCTION", 
+			"LABEL", "EOL", "WS", "LETTER"
 		};
 	}
 	private static final String[] _SYMBOLIC_NAMES = makeSymbolicNames();
@@ -107,6 +107,10 @@ public class TasmParser extends Parser {
 		public LineContext line(int i) {
 			return getRuleContext(LineContext.class,i);
 		}
+		public List<TerminalNode> EOL() { return getTokens(TasmParser.EOL); }
+		public TerminalNode EOL(int i) {
+			return getToken(TasmParser.EOL, i);
+		}
 		public ProgramContext(ParserRuleContext parent, int invokingState) {
 			super(parent, invokingState);
 		}
@@ -131,23 +135,64 @@ public class TasmParser extends Parser {
 		enterRule(_localctx, 0, RULE_program);
 		int _la;
 		try {
+			int _alt;
 			enterOuterAlt(_localctx, 1);
 			{
-			setState(11); 
+			setState(28);
 			_errHandler.sync(this);
 			_la = _input.LA(1);
-			do {
-				{
+			if ((((_la) & ~0x3f) == 0 && ((1L << _la) & 1048320L) != 0)) {
 				{
 				setState(10);
 				line();
+				setState(19);
+				_errHandler.sync(this);
+				_alt = getInterpreter().adaptivePredict(_input,1,_ctx);
+				while ( _alt!=2 && _alt!=org.antlr.v4.runtime.atn.ATN.INVALID_ALT_NUMBER ) {
+					if ( _alt==1 ) {
+						{
+						{
+						setState(12); 
+						_errHandler.sync(this);
+						_la = _input.LA(1);
+						do {
+							{
+							{
+							setState(11);
+							match(EOL);
+							}
+							}
+							setState(14); 
+							_errHandler.sync(this);
+							_la = _input.LA(1);
+						} while ( _la==EOL );
+						setState(16);
+						line();
+						}
+						} 
+					}
+					setState(21);
+					_errHandler.sync(this);
+					_alt = getInterpreter().adaptivePredict(_input,1,_ctx);
 				}
-				}
-				setState(13); 
+				setState(25);
 				_errHandler.sync(this);
 				_la = _input.LA(1);
-			} while ( (((_la) & ~0x3f) == 0 && ((1L << _la) & 1048448L) != 0) );
-			setState(15);
+				while (_la==EOL) {
+					{
+					{
+					setState(22);
+					match(EOL);
+					}
+					}
+					setState(27);
+					_errHandler.sync(this);
+					_la = _input.LA(1);
+				}
+				}
+			}
+
+			setState(30);
 			match(EOF);
 			}
 		}
@@ -164,11 +209,13 @@ public class TasmParser extends Parser {
 
 	@SuppressWarnings("CheckReturnValue")
 	public static class LineContext extends ParserRuleContext {
-		public TerminalNode EOL() { return getToken(TasmParser.EOL, 0); }
 		public InstructionContext instruction() {
 			return getRuleContext(InstructionContext.class,0);
 		}
-		public TerminalNode LABEL() { return getToken(TasmParser.LABEL, 0); }
+		public List<TerminalNode> LABEL() { return getTokens(TasmParser.LABEL); }
+		public TerminalNode LABEL(int i) {
+			return getToken(TasmParser.LABEL, i);
+		}
 		public LineContext(ParserRuleContext parent, int invokingState) {
 			super(parent, invokingState);
 		}
@@ -195,30 +242,38 @@ public class TasmParser extends Parser {
 		try {
 			enterOuterAlt(_localctx, 1);
 			{
-			setState(22);
+			{
+			setState(41);
 			_errHandler.sync(this);
 			_la = _input.LA(1);
-			if ((((_la) & ~0x3f) == 0 && ((1L << _la) & 524160L) != 0)) {
+			if (_la==LABEL) {
 				{
-				setState(19);
+				setState(32);
+				match(LABEL);
+				setState(37);
 				_errHandler.sync(this);
 				_la = _input.LA(1);
-				if (_la==LABEL) {
+				while (_la==T__0) {
 					{
-					setState(17);
-					match(LABEL);
-					setState(18);
+					{
+					setState(33);
 					match(T__0);
+					setState(34);
+					match(LABEL);
 					}
+					}
+					setState(39);
+					_errHandler.sync(this);
+					_la = _input.LA(1);
 				}
-
-				setState(21);
-				instruction();
+				setState(40);
+				match(T__1);
 				}
 			}
 
-			setState(24);
-			match(EOL);
+			setState(43);
+			instruction();
+			}
 			}
 		}
 		catch (RecognitionException re) {
@@ -263,7 +318,7 @@ public class TasmParser extends Parser {
 		InstructionContext _localctx = new InstructionContext(_ctx, getState());
 		enterRule(_localctx, 4, RULE_instruction);
 		try {
-			setState(28);
+			setState(47);
 			_errHandler.sync(this);
 			switch (_input.LA(1)) {
 			case LOAD_INT:
@@ -278,14 +333,14 @@ public class TasmParser extends Parser {
 			case GLOBAL_STORE:
 				enterOuterAlt(_localctx, 1);
 				{
-				setState(26);
+				setState(45);
 				instructionWithArguments();
 				}
 				break;
 			case SIMPLE_INSTRUCTION:
 				enterOuterAlt(_localctx, 2);
 				{
-				setState(27);
+				setState(46);
 				simpleInstruction();
 				}
 				break;
@@ -444,16 +499,16 @@ public class TasmParser extends Parser {
 		enterRule(_localctx, 6, RULE_instructionWithArguments);
 		int _la;
 		try {
-			setState(42);
+			setState(61);
 			_errHandler.sync(this);
 			switch (_input.LA(1)) {
 			case LOAD_INT:
 				_localctx = new LoadIntContext(_localctx);
 				enterOuterAlt(_localctx, 1);
 				{
-				setState(30);
+				setState(49);
 				match(LOAD_INT);
-				setState(31);
+				setState(50);
 				match(INT);
 				}
 				break;
@@ -461,9 +516,9 @@ public class TasmParser extends Parser {
 				_localctx = new LoadDoubleContext(_localctx);
 				enterOuterAlt(_localctx, 2);
 				{
-				setState(32);
+				setState(51);
 				match(LOAD_DOUBLE);
-				setState(33);
+				setState(52);
 				((LoadDoubleContext)_localctx).value = _input.LT(1);
 				_la = _input.LA(1);
 				if ( !(_la==INT || _la==DOUBLE) ) {
@@ -480,9 +535,9 @@ public class TasmParser extends Parser {
 				_localctx = new LoadStringContext(_localctx);
 				enterOuterAlt(_localctx, 3);
 				{
-				setState(34);
+				setState(53);
 				match(LOAD_STRING);
-				setState(35);
+				setState(54);
 				match(STRING);
 				}
 				break;
@@ -490,9 +545,9 @@ public class TasmParser extends Parser {
 				_localctx = new LoadBoolContext(_localctx);
 				enterOuterAlt(_localctx, 4);
 				{
-				setState(36);
+				setState(55);
 				match(LOAD_BOOL);
-				setState(37);
+				setState(56);
 				match(BOOL);
 				}
 				break;
@@ -502,10 +557,10 @@ public class TasmParser extends Parser {
 				_localctx = new JumpContext(_localctx);
 				enterOuterAlt(_localctx, 5);
 				{
-				setState(38);
+				setState(57);
 				((JumpContext)_localctx).jump = _input.LT(1);
 				_la = _input.LA(1);
-				if ( !((((_la) & ~0x3f) == 0 && ((1L << _la) & 14336L) != 0)) ) {
+				if ( !((((_la) & ~0x3f) == 0 && ((1L << _la) & 28672L) != 0)) ) {
 					((JumpContext)_localctx).jump = (Token)_errHandler.recoverInline(this);
 				}
 				else {
@@ -513,7 +568,7 @@ public class TasmParser extends Parser {
 					_errHandler.reportMatch(this);
 					consume();
 				}
-				setState(39);
+				setState(58);
 				match(LABEL);
 				}
 				break;
@@ -523,10 +578,10 @@ public class TasmParser extends Parser {
 				_localctx = new GlobalContext(_localctx);
 				enterOuterAlt(_localctx, 6);
 				{
-				setState(40);
+				setState(59);
 				((GlobalContext)_localctx).global = _input.LT(1);
 				_la = _input.LA(1);
-				if ( !((((_la) & ~0x3f) == 0 && ((1L << _la) & 114688L) != 0)) ) {
+				if ( !((((_la) & ~0x3f) == 0 && ((1L << _la) & 229376L) != 0)) ) {
 					((GlobalContext)_localctx).global = (Token)_errHandler.recoverInline(this);
 				}
 				else {
@@ -534,7 +589,7 @@ public class TasmParser extends Parser {
 					_errHandler.reportMatch(this);
 					consume();
 				}
-				setState(41);
+				setState(60);
 				match(INT);
 				}
 				break;
@@ -581,7 +636,7 @@ public class TasmParser extends Parser {
 		try {
 			enterOuterAlt(_localctx, 1);
 			{
-			setState(44);
+			setState(63);
 			match(SIMPLE_INSTRUCTION);
 			}
 		}
@@ -597,38 +652,49 @@ public class TasmParser extends Parser {
 	}
 
 	public static final String _serializedATN =
-		"\u0004\u0001\u0015/\u0002\u0000\u0007\u0000\u0002\u0001\u0007\u0001\u0002"+
+		"\u0004\u0001\u0016B\u0002\u0000\u0007\u0000\u0002\u0001\u0007\u0001\u0002"+
 		"\u0002\u0007\u0002\u0002\u0003\u0007\u0003\u0002\u0004\u0007\u0004\u0001"+
-		"\u0000\u0004\u0000\f\b\u0000\u000b\u0000\f\u0000\r\u0001\u0000\u0001\u0000"+
-		"\u0001\u0001\u0001\u0001\u0003\u0001\u0014\b\u0001\u0001\u0001\u0003\u0001"+
-		"\u0017\b\u0001\u0001\u0001\u0001\u0001\u0001\u0002\u0001\u0002\u0003\u0002"+
-		"\u001d\b\u0002\u0001\u0003\u0001\u0003\u0001\u0003\u0001\u0003\u0001\u0003"+
+		"\u0000\u0001\u0000\u0004\u0000\r\b\u0000\u000b\u0000\f\u0000\u000e\u0001"+
+		"\u0000\u0005\u0000\u0012\b\u0000\n\u0000\f\u0000\u0015\t\u0000\u0001\u0000"+
+		"\u0005\u0000\u0018\b\u0000\n\u0000\f\u0000\u001b\t\u0000\u0003\u0000\u001d"+
+		"\b\u0000\u0001\u0000\u0001\u0000\u0001\u0001\u0001\u0001\u0001\u0001\u0005"+
+		"\u0001$\b\u0001\n\u0001\f\u0001\'\t\u0001\u0001\u0001\u0003\u0001*\b\u0001"+
+		"\u0001\u0001\u0001\u0001\u0001\u0002\u0001\u0002\u0003\u00020\b\u0002"+
 		"\u0001\u0003\u0001\u0003\u0001\u0003\u0001\u0003\u0001\u0003\u0001\u0003"+
-		"\u0001\u0003\u0003\u0003+\b\u0003\u0001\u0004\u0001\u0004\u0001\u0004"+
-		"\u0000\u0000\u0005\u0000\u0002\u0004\u0006\b\u0000\u0003\u0001\u0000\u0002"+
-		"\u0003\u0001\u0000\u000b\r\u0001\u0000\u000e\u00102\u0000\u000b\u0001"+
-		"\u0000\u0000\u0000\u0002\u0016\u0001\u0000\u0000\u0000\u0004\u001c\u0001"+
-		"\u0000\u0000\u0000\u0006*\u0001\u0000\u0000\u0000\b,\u0001\u0000\u0000"+
-		"\u0000\n\f\u0003\u0002\u0001\u0000\u000b\n\u0001\u0000\u0000\u0000\f\r"+
-		"\u0001\u0000\u0000\u0000\r\u000b\u0001\u0000\u0000\u0000\r\u000e\u0001"+
-		"\u0000\u0000\u0000\u000e\u000f\u0001\u0000\u0000\u0000\u000f\u0010\u0005"+
-		"\u0000\u0000\u0001\u0010\u0001\u0001\u0000\u0000\u0000\u0011\u0012\u0005"+
-		"\u0012\u0000\u0000\u0012\u0014\u0005\u0001\u0000\u0000\u0013\u0011\u0001"+
-		"\u0000\u0000\u0000\u0013\u0014\u0001\u0000\u0000\u0000\u0014\u0015\u0001"+
-		"\u0000\u0000\u0000\u0015\u0017\u0003\u0004\u0002\u0000\u0016\u0013\u0001"+
-		"\u0000\u0000\u0000\u0016\u0017\u0001\u0000\u0000\u0000\u0017\u0018\u0001"+
-		"\u0000\u0000\u0000\u0018\u0019\u0005\u0013\u0000\u0000\u0019\u0003\u0001"+
-		"\u0000\u0000\u0000\u001a\u001d\u0003\u0006\u0003\u0000\u001b\u001d\u0003"+
-		"\b\u0004\u0000\u001c\u001a\u0001\u0000\u0000\u0000\u001c\u001b\u0001\u0000"+
-		"\u0000\u0000\u001d\u0005\u0001\u0000\u0000\u0000\u001e\u001f\u0005\u0007"+
-		"\u0000\u0000\u001f+\u0005\u0002\u0000\u0000 !\u0005\b\u0000\u0000!+\u0007"+
-		"\u0000\u0000\u0000\"#\u0005\t\u0000\u0000#+\u0005\u0004\u0000\u0000$%"+
-		"\u0005\n\u0000\u0000%+\u0005\u0005\u0000\u0000&\'\u0007\u0001\u0000\u0000"+
-		"\'+\u0005\u0012\u0000\u0000()\u0007\u0002\u0000\u0000)+\u0005\u0002\u0000"+
-		"\u0000*\u001e\u0001\u0000\u0000\u0000* \u0001\u0000\u0000\u0000*\"\u0001"+
-		"\u0000\u0000\u0000*$\u0001\u0000\u0000\u0000*&\u0001\u0000\u0000\u0000"+
-		"*(\u0001\u0000\u0000\u0000+\u0007\u0001\u0000\u0000\u0000,-\u0005\u0011"+
-		"\u0000\u0000-\t\u0001\u0000\u0000\u0000\u0005\r\u0013\u0016\u001c*";
+		"\u0001\u0003\u0001\u0003\u0001\u0003\u0001\u0003\u0001\u0003\u0001\u0003"+
+		"\u0003\u0003>\b\u0003\u0001\u0004\u0001\u0004\u0001\u0004\u0000\u0000"+
+		"\u0005\u0000\u0002\u0004\u0006\b\u0000\u0003\u0001\u0000\u0003\u0004\u0001"+
+		"\u0000\f\u000e\u0001\u0000\u000f\u0011H\u0000\u001c\u0001\u0000\u0000"+
+		"\u0000\u0002)\u0001\u0000\u0000\u0000\u0004/\u0001\u0000\u0000\u0000\u0006"+
+		"=\u0001\u0000\u0000\u0000\b?\u0001\u0000\u0000\u0000\n\u0013\u0003\u0002"+
+		"\u0001\u0000\u000b\r\u0005\u0014\u0000\u0000\f\u000b\u0001\u0000\u0000"+
+		"\u0000\r\u000e\u0001\u0000\u0000\u0000\u000e\f\u0001\u0000\u0000\u0000"+
+		"\u000e\u000f\u0001\u0000\u0000\u0000\u000f\u0010\u0001\u0000\u0000\u0000"+
+		"\u0010\u0012\u0003\u0002\u0001\u0000\u0011\f\u0001\u0000\u0000\u0000\u0012"+
+		"\u0015\u0001\u0000\u0000\u0000\u0013\u0011\u0001\u0000\u0000\u0000\u0013"+
+		"\u0014\u0001\u0000\u0000\u0000\u0014\u0019\u0001\u0000\u0000\u0000\u0015"+
+		"\u0013\u0001\u0000\u0000\u0000\u0016\u0018\u0005\u0014\u0000\u0000\u0017"+
+		"\u0016\u0001\u0000\u0000\u0000\u0018\u001b\u0001\u0000\u0000\u0000\u0019"+
+		"\u0017\u0001\u0000\u0000\u0000\u0019\u001a\u0001\u0000\u0000\u0000\u001a"+
+		"\u001d\u0001\u0000\u0000\u0000\u001b\u0019\u0001\u0000\u0000\u0000\u001c"+
+		"\n\u0001\u0000\u0000\u0000\u001c\u001d\u0001\u0000\u0000\u0000\u001d\u001e"+
+		"\u0001\u0000\u0000\u0000\u001e\u001f\u0005\u0000\u0000\u0001\u001f\u0001"+
+		"\u0001\u0000\u0000\u0000 %\u0005\u0013\u0000\u0000!\"\u0005\u0001\u0000"+
+		"\u0000\"$\u0005\u0013\u0000\u0000#!\u0001\u0000\u0000\u0000$\'\u0001\u0000"+
+		"\u0000\u0000%#\u0001\u0000\u0000\u0000%&\u0001\u0000\u0000\u0000&(\u0001"+
+		"\u0000\u0000\u0000\'%\u0001\u0000\u0000\u0000(*\u0005\u0002\u0000\u0000"+
+		") \u0001\u0000\u0000\u0000)*\u0001\u0000\u0000\u0000*+\u0001\u0000\u0000"+
+		"\u0000+,\u0003\u0004\u0002\u0000,\u0003\u0001\u0000\u0000\u0000-0\u0003"+
+		"\u0006\u0003\u0000.0\u0003\b\u0004\u0000/-\u0001\u0000\u0000\u0000/.\u0001"+
+		"\u0000\u0000\u00000\u0005\u0001\u0000\u0000\u000012\u0005\b\u0000\u0000"+
+		"2>\u0005\u0003\u0000\u000034\u0005\t\u0000\u00004>\u0007\u0000\u0000\u0000"+
+		"56\u0005\n\u0000\u00006>\u0005\u0005\u0000\u000078\u0005\u000b\u0000\u0000"+
+		"8>\u0005\u0006\u0000\u00009:\u0007\u0001\u0000\u0000:>\u0005\u0013\u0000"+
+		"\u0000;<\u0007\u0002\u0000\u0000<>\u0005\u0003\u0000\u0000=1\u0001\u0000"+
+		"\u0000\u0000=3\u0001\u0000\u0000\u0000=5\u0001\u0000\u0000\u0000=7\u0001"+
+		"\u0000\u0000\u0000=9\u0001\u0000\u0000\u0000=;\u0001\u0000\u0000\u0000"+
+		">\u0007\u0001\u0000\u0000\u0000?@\u0005\u0012\u0000\u0000@\t\u0001\u0000"+
+		"\u0000\u0000\b\u000e\u0013\u0019\u001c%)/=";
 	public static final ATN _ATN =
 		new ATNDeserializer().deserialize(_serializedATN.toCharArray());
 	static {

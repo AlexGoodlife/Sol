@@ -1,9 +1,9 @@
 grammar Tasm;
 
-program:    (line)+ EOF
+program:    (line (EOL+ line)* EOL*)? EOF
             ;
 
-line:   ((LABEL':')?instruction)? EOL
+line:   ((LABEL (',' LABEL)*':')?instruction)
         ;
 
 instruction:    instructionWithArguments
@@ -59,7 +59,7 @@ SIMPLE_INSTRUCTION: //Int instructions
                     ;
 
 LABEL: ('_'|LETTER)('_'|LETTER|DIGIT)*;
-EOL: '\n';
+EOL: '\r'? '\n';
 
 WS: [ \r\t]+ -> skip;
 
