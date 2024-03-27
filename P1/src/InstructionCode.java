@@ -24,7 +24,7 @@ public enum InstructionCode {
     ILEQ,
     ITOD,
     ITOS,
-    DUMINS,
+    DUMINUS,
     DADD,
     DSUB,
     DMULT,

@@ -25,7 +25,6 @@ INT: DIGIT+;
 DOUBLE: DIGIT+'.'DIGIT+;
 STRING: '"'.*?'"';
 BOOL: 'true' | 'false';
-NULL: 'NIL';
 
 //One argument instructions
 //Load instructions
