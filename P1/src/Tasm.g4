@@ -1,6 +1,6 @@
 grammar Tasm;
 
-program:    (line)+
+program:    (line)+ EOF
             ;
 
 line:   ((LABEL':')?instruction)? EOL
@@ -58,7 +58,7 @@ SIMPLE_INSTRUCTION: //Int instructions
                     | 'halt'
                     ;
 
-LABEL: ('_'|LETTER)('_'|LETTER|DIGIT)+;
+LABEL: ('_'|LETTER)('_'|LETTER|DIGIT)*;
 EOL: '\n';
 
 WS: [ \r\t]+ -> skip;
