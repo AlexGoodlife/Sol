@@ -1,7 +1,7 @@
 import java.io.*;
 import java.util.Stack;
 
-public class MyCalculatorVirtualMachine
+public class tVm
 {
     public static final int MAX_ARGUMENTS_SIZE = 3;
     private static final String BYTECODES_FILE_FLAG = "-b";
@@ -15,7 +15,7 @@ public class MyCalculatorVirtualMachine
     private String byteCodesFileName;
     private boolean showTrace;
 
-    public MyCalculatorVirtualMachine()
+    public tVm()
     {
         this.byteCodesFileName = DEFAULT_BYTECODES_FILE_NAME;
         this.showTrace = DEFAULT_SHOW_TRACE;
@@ -26,7 +26,7 @@ public class MyCalculatorVirtualMachine
         this.parseArguments(args);
         this.initVirtualMachine();
 
-        OperationCode[] operations = OperationCode.values();
+        InstructionCode[] operations = InstructionCode.values();
         if (this.showTrace)
             System.out.println("Stack:\t" + this.stack);
         while (this.byteCodes.available() > 0)
@@ -60,7 +60,7 @@ public class MyCalculatorVirtualMachine
         this.byteCodes = new DataInputStream(new FileInputStream(this.byteCodesFileName));
     }
 
-    private void executeOperation(OperationCode code) throws IOException
+    private void executeOperation(InstructionCode code) throws IOException
     {
         switch (code)
         {
@@ -83,7 +83,7 @@ public class MyCalculatorVirtualMachine
         }
     }
 
-    private void executeArithmeticOperation(OperationCode code)
+    private void executeArithmeticOperation(InstructionCode code)
     {
         int right = this.stack.pop();
         int left = this.stack.pop();
@@ -105,7 +105,7 @@ public class MyCalculatorVirtualMachine
 
     public static void main(String[] args) throws IOException
     {
-        MyCalculatorVirtualMachine virtualMachine = new MyCalculatorVirtualMachine();
+        tVm virtualMachine = new tVm();
         virtualMachine.execute(args);
     }
 }

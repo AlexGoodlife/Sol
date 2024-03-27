@@ -1,20 +1,20 @@
 public class Instruction
 {
-    private final OperationCode instruction;
+    private final InstructionCode instruction;
     private final Integer operand;
 
-    public Instruction(OperationCode instruction, Integer operand)
+    public Instruction(InstructionCode instruction, Integer operand)
     {
         this.instruction = instruction;
         this.operand = operand;
     }
 
-    public Instruction(OperationCode instruction)
+    public Instruction(InstructionCode instruction)
     {
         this(instruction, null);
     }
 
-    public OperationCode getInstruction()
+    public InstructionCode getInstruction()
     {
         return this.instruction;
     }

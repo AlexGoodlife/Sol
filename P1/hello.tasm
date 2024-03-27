@@ -1,0 +1,21 @@
+            galloc 2
+            iconst 0
+            gstore 0
+            dconst 10.22
+            iconst 10
+            gstore 1
+
+_loop:      sconst "Hello World"
+            sprint
+
+            gload 0
+            iconst 1
+            iadd
+            gstore 0
+
+            gload 1
+            gload 0
+            ilt
+            jumpt _loop
+
+            halt
