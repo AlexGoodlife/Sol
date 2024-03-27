@@ -199,10 +199,10 @@ public class tVm
         Object left = this.executionStack.pop();
         switch (instruction.getInstruction())
         {
-            case IADD, ISUB, IMOD, IMULT, IEQ, INEQ, ILEQ, ILT -> intOperation(right, left, instruction.getInstruction());
-            case DADD, DSUB, DMULT, DEQ, DNEQ, DLEQ, DLT -> doubleOperation(right, left, instruction.getInstruction());
-            case SNEQ, SADD, SEQ -> stringOperation(right, left, instruction.getInstruction());
-            case BEQ, BNEQ, AND, OR -> booleanOperation(right, left, instruction.getInstruction());
+            case IADD, ISUB, IMOD, IMULT, IEQ, INEQ, ILEQ, ILT -> intOperation(left, right, instruction.getInstruction());
+            case DADD, DSUB, DMULT, DEQ, DNEQ, DLEQ, DLT -> doubleOperation(left, right, instruction.getInstruction());
+            case SNEQ, SADD, SEQ -> stringOperation(left, right, instruction.getInstruction());
+            case BEQ, BNEQ, AND, OR -> booleanOperation(left, right, instruction.getInstruction());
         }
     }
 
