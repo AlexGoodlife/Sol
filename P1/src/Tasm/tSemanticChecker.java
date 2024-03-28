@@ -19,6 +19,7 @@ public class tSemanticChecker extends TasmBaseListener
     private boolean halted;
     ErrorReporter reporter;
 
+
     public tSemanticChecker(ErrorReporter reporter)
     {
         this.labelsToInstruction = new HashMap<>();

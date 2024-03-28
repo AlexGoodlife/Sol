@@ -29,6 +29,8 @@ public class tAssembler extends TasmBaseListener
     private HashMap<String, Integer> labelsToInstruction;
     private ErrorReporter errorReporter;
 
+    private int syntaxErrorCount;
+
     public tAssembler()
     {
         this.sourceFileName = DEFAULT_SOURCE_FILE_NAME;
@@ -84,8 +86,32 @@ public class tAssembler extends TasmBaseListener
     {
         this.parseArguments(args);
         this.initCompiler();
-        if(!this.hasSemanticErrors())
+        if(!hasErrors())
             this.writeByteCodes();
+    }
+
+    private boolean hasErrors() {
+        int count  = this.errorReporter.getErrorCount();
+        boolean hasSemanticErrors = count > 0;
+        boolean hasSyntaxErrors =  this.syntaxErrorCount > 0;
+        if (hasSemanticErrors || hasSyntaxErrors){
+            StringBuilder message = new StringBuilder();
+            message.append("Program compiled unsuccessfully with ");
+            if(hasSyntaxErrors){
+                String syntaxErrors = syntaxErrorCount > 1 ? " syntax errors" : " syntax error";
+                message.append(this.syntaxErrorCount).append(syntaxErrors);
+                if(hasSemanticErrors) message.append(" and ");
+            }
+            if(hasSemanticErrors){
+                this.errorReporter.getErrors().forEach((e) -> System.err.println("ERROR: " + e));
+                String semanticErrors = count > 1 ? " semantic errors" : " semantic error";
+                message.append(count).append(semanticErrors);
+
+            }
+            System.err.println(message);
+            System.exit(1);
+        }
+        return false;
     }
 
     private void parseArguments(String[] args)
@@ -118,11 +144,12 @@ public class tAssembler extends TasmBaseListener
         TasmLexer lexer = new TasmLexer(input);
         CommonTokenStream tokens = new CommonTokenStream(lexer);
         TasmParser parser = new TasmParser(tokens);
-        ParseTree tree = parser.program();
         tSemanticChecker checker = new tSemanticChecker(this.errorReporter);
+        ParseTree tree = parser.program();
         checker.semanticCheck(tree);
         this.labelsToInstruction = checker.getLabelsToInstruction();
         ParseTreeWalker walker = new ParseTreeWalker();
+        this.syntaxErrorCount = parser.getNumberOfSyntaxErrors();
         walker.walk(this, tree);
     }
 
@@ -133,18 +160,6 @@ public class tAssembler extends TasmBaseListener
         this.nameToCodes = new HashMap<>();
         Arrays.stream(InstructionCode.values()).forEach((code) -> this.nameToCodes.put(code.name().toLowerCase(), code));
         this.errorReporter = new ErrorReporter();
-    }
-
-    private boolean hasSemanticErrors()
-    {
-        int count = this.errorReporter.getErrorCount();
-        if (count > 0){
-            this.errorReporter.getErrors().forEach((e) -> System.err.println("ERROR: " + e));
-            String errors = count > 1 ? " semantic errors" : " semantic error";
-            System.err.println("Program compiled unsuccessfully with " + this.errorReporter.getErrorCount() + errors);
-            System.exit(1);
-        }
-        return false;
     }
 
     private void writeByteCodes() throws IOException

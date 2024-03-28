@@ -9,18 +9,18 @@ import java.util.List;
 
 public class ErrorReporter
 {
-    public static class SemanticError
+    public static class CompilationError
     {
         private  ParserRuleContext ctx;
         private final String message;
 
 
-        public SemanticError(ParserRuleContext ctx, String message)
+        public CompilationError(ParserRuleContext ctx, String message)
         {
             this.ctx = ctx;
             this.message = message;
         }
-        public SemanticError(String message)
+        public CompilationError(String message)
         {
             this.message = message;
         }
@@ -44,7 +44,7 @@ public class ErrorReporter
         }
     }
 
-    List<SemanticError> errors;
+    List<CompilationError> errors;
 
     public ErrorReporter()
     {
@@ -53,14 +53,14 @@ public class ErrorReporter
 
     public void reportError(ParserRuleContext ctx, String message)
     {
-        this.errors.add(new SemanticError(ctx, message));
+        this.errors.add(new CompilationError(ctx, message));
     }
     public void reportError(String message)
     {
-        this.errors.add(new SemanticError(message));
+        this.errors.add(new CompilationError(message));
     }
 
-    public List<SemanticError> getErrors()
+    public List<CompilationError> getErrors()
     {
         return this.errors;
     }
