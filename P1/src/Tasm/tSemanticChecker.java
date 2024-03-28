@@ -66,7 +66,6 @@ public class tSemanticChecker extends TasmBaseListener
     @Override
     public void visitErrorNode(ErrorNode node)
     {
-        node.getText();
-        this.reporter.reportError(node.getText());
+        this.reporter.reportError("Syntax error");
     }
 }
