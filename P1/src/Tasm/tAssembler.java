@@ -23,6 +23,8 @@ public class tAssembler extends TasmBaseListener
     private String sourceFileName;
     private String byteCodesFileName;
     private boolean showAssembly;
+
+    private ParseTree parseTree;
     private ArrayList<Instruction> instructions;
     private List<Object> constantPool;
     private HashMap<String, InstructionCode> nameToCodes;
@@ -80,11 +82,14 @@ public class tAssembler extends TasmBaseListener
         this.instructions.add(new Instruction(this.nameToCodes.get(ctx.SIMPLE_INSTRUCTION().getText())));
     }
 
-    public void compile(String[] args) throws IOException
+    public void assemble(String[] args) throws IOException
     {
         this.parseArguments(args);
         this.initCompiler();
-        if(!this.hasSemanticErrors())
+        this.assembleInstructions();
+        if (this.errorReporter.hasReportedErrors())
+            this.throwUnsuccessfulAssemble();
+        else
             this.writeByteCodes();
     }
 
@@ -112,22 +117,7 @@ public class tAssembler extends TasmBaseListener
 
     private void initCompiler() throws IOException
     {
-        this.initCompilerVariables();
-        InputStream inputStream = this.sourceFileName != null ? new FileInputStream(this.sourceFileName) : System.in;
-        CharStream input = CharStreams.fromStream(inputStream);
-        TasmLexer lexer = new TasmLexer(input);
-        CommonTokenStream tokens = new CommonTokenStream(lexer);
-        TasmParser parser = new TasmParser(tokens);
-        ParseTree tree = parser.program();
-        tSemanticChecker checker = new tSemanticChecker(this.errorReporter);
-        checker.semanticCheck(tree);
-        this.labelsToInstruction = checker.getLabelsToInstruction();
-        ParseTreeWalker walker = new ParseTreeWalker();
-        walker.walk(this, tree);
-    }
-
-    private void initCompilerVariables()
-    {
+        this.parseTree = this.generateParseTree();
         this.instructions = new ArrayList<>();
         this.constantPool = new ArrayList<>();
         this.nameToCodes = new HashMap<>();
@@ -135,16 +125,32 @@ public class tAssembler extends TasmBaseListener
         this.errorReporter = new ErrorReporter();
     }
 
-    private boolean hasSemanticErrors()
+    private ParseTree generateParseTree() throws IOException
     {
-        int count = this.errorReporter.getErrorCount();
-        if (count > 0){
-            this.errorReporter.getErrors().forEach((e) -> System.err.println("ERROR: " + e));
-            String errors = count > 1 ? " semantic errors" : " semantic error";
-            System.err.println("Program compiled unsuccessfully with " + this.errorReporter.getErrorCount() + errors);
-            System.exit(1);
-        }
-        return false;
+        InputStream inputStream = this.sourceFileName != null ? new FileInputStream(this.sourceFileName) : System.in;
+        CharStream input = CharStreams.fromStream(inputStream);
+        TasmLexer lexer = new TasmLexer(input);
+        CommonTokenStream tokens = new CommonTokenStream(lexer);
+        TasmParser parser = new TasmParser(tokens);
+        return parser.program();
+    }
+
+    private void assembleInstructions()
+    {
+        tSemanticChecker checker = new tSemanticChecker(this.errorReporter);
+        checker.semanticCheck(this.parseTree);
+        this.labelsToInstruction = checker.getLabelsToInstruction();
+        ParseTreeWalker walker = new ParseTreeWalker();
+        walker.walk(this, this.parseTree);
+    }
+
+    private void throwUnsuccessfulAssemble()
+    {
+        System.err.println(this.errorReporter);
+        int errorCount = this.errorReporter.getErrorCount();
+        String errors = errorCount > 1 ? " semantic errors" : " semantic error";
+        System.err.println("\nProgram compiled unsuccessfully with " + errorCount + errors);
+        System.exit(1);
     }
 
     private void writeByteCodes() throws IOException
@@ -153,7 +159,7 @@ public class tAssembler extends TasmBaseListener
         this.writeInstructions(byteCodes);
         this.writeConstantPool(byteCodes);
         if (this.showAssembly)
-            this.printAssembledByteCodes();
+            this.printAssembledCode();
     }
 
     private void writeInstructions(DataOutputStream byteCodes) throws IOException
@@ -184,7 +190,7 @@ public class tAssembler extends TasmBaseListener
             }
     }
 
-    private void printAssembledByteCodes()
+    private void printAssembledCode()
     {
         System.out.println("ASSEMBLED INSTRUCTIONS:");
         for (int i = 0; i < this.instructions.size(); i++)
@@ -196,7 +202,7 @@ public class tAssembler extends TasmBaseListener
 
     public static void main(String[] args) throws IOException
     {
-        tAssembler compiler = new tAssembler();
-        compiler.compile(args);
+        tAssembler assembler = new tAssembler();
+        assembler.assemble(args);
     }
 }

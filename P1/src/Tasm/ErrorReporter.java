@@ -9,18 +9,17 @@ import java.util.List;
 
 public class ErrorReporter
 {
-    public static class SemanticError
+    private static class SemanticError
     {
-        private  ParserRuleContext ctx;
+        private ParserRuleContext ctx;
         private final String message;
 
-
-        public SemanticError(ParserRuleContext ctx, String message)
+        private SemanticError(ParserRuleContext ctx, String message)
         {
             this.ctx = ctx;
             this.message = message;
         }
-        public SemanticError(String message)
+        private SemanticError(String message)
         {
             this.message = message;
         }
@@ -30,43 +29,53 @@ public class ErrorReporter
         {
             StringBuilder message = new StringBuilder();
             message.append(this.message);
-            if(this.ctx ==null){
+            if (this.ctx == null)
                return message.toString();
-            }
-            message.append(" on line ").append(this.ctx.start.getLine()).append(":").append(this.ctx.start.getCharPositionInLine());
 
+            message.append(" on line ").append(this.ctx.start.getLine()).append(":")
+                    .append(this.ctx.start.getCharPositionInLine()).append("\n");
             CharStream input = this.ctx.start.getInputStream();
             int a = ctx.start.getStartIndex();
             int b = ctx.stop.getStopIndex();
-            Interval interval = new Interval(a,b);
-            message.append("\n'").append(input.getText(interval)).append("'\n");
+            Interval interval = new Interval(a, b);
+            message.append("'").append(input.getText(interval)).append("'");
             return message.toString();
         }
     }
 
-    List<SemanticError> errors;
+    private final List<SemanticError> errors;
 
     public ErrorReporter()
     {
         this.errors = new ArrayList<>();
     }
 
-    public void reportError(ParserRuleContext ctx, String message)
+    public boolean hasReportedErrors()
     {
-        this.errors.add(new SemanticError(ctx, message));
-    }
-    public void reportError(String message)
-    {
-        this.errors.add(new SemanticError(message));
-    }
-
-    public List<SemanticError> getErrors()
-    {
-        return this.errors;
+        return !this.errors.isEmpty();
     }
 
     public int getErrorCount()
     {
         return this.errors.size();
+    }
+
+    public void reportError(ParserRuleContext ctx, String message)
+    {
+        this.errors.add(new SemanticError(ctx, message));
+    }
+
+    public void reportError(String message)
+    {
+        this.errors.add(new SemanticError(message));
+    }
+
+    @Override
+    public String toString()
+    {
+        StringBuilder builder = new StringBuilder();
+        builder.append("ERROR REPORTER:\n");
+        this.errors.forEach((e) -> builder.append("\nERROR: ").append(e).append("\n"));
+        return builder.toString();
     }
 }
