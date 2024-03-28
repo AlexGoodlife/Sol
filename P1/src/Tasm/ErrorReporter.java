@@ -11,9 +11,8 @@ public class ErrorReporter
 {
     public static class CompilationError
     {
-        private  ParserRuleContext ctx;
+        private ParserRuleContext ctx;
         private final String message;
-
 
         public CompilationError(ParserRuleContext ctx, String message)
         {
@@ -30,29 +29,32 @@ public class ErrorReporter
         {
             StringBuilder message = new StringBuilder();
             message.append(this.message);
-            if(this.ctx ==null){
+            if (this.ctx == null)
                return message.toString();
-            }
-            message.append(" on line ").append(this.ctx.start.getLine()).append(":").append(this.ctx.start.getCharPositionInLine());
 
+            message.append(" on line ").append(this.ctx.start.getLine()).append(":")
+                    .append(this.ctx.start.getCharPositionInLine()).append("\n");
             CharStream input = this.ctx.start.getInputStream();
             int a = ctx.start.getStartIndex();
             int b = ctx.stop.getStopIndex();
-            Interval interval = new Interval(a,b);
-            message.append("\n'").append(input.getText(interval)).append("'\n");
+            Interval interval = new Interval(a, b);
+            message.append("'").append(input.getText(interval)).append("'");
             return message.toString();
         }
     }
 
-    List<CompilationError> errors;
+    private final List<CompilationError> errors;
 
     public ErrorReporter()
     {
         this.errors = new ArrayList<>();
     }
 
-    public void reportError(ParserRuleContext ctx, String message)
+    public boolean hasReportedErrors()
     {
+        return !this.errors.isEmpty();
+    }
+    public void reportError(ParserRuleContext ctx, String message){
         this.errors.add(new CompilationError(ctx, message));
     }
     public void reportError(String message)
@@ -68,5 +70,14 @@ public class ErrorReporter
     public int getErrorCount()
     {
         return this.errors.size();
+    }
+
+    @Override
+    public String toString()
+    {
+        StringBuilder builder = new StringBuilder();
+        builder.append("ERROR REPORTER:\n");
+        this.errors.forEach((e) -> builder.append("\nERROR: ").append(e).append("\n"));
+        return builder.toString();
     }
 }

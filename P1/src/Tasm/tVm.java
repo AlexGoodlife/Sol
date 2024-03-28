@@ -14,8 +14,9 @@ public class tVm
     private static final boolean DEFAULT_SHOW_TRACE = false;
 
     private String byteCodesFileName;
-    private DataInputStream byteCodes;
     private boolean showTrace;
+
+    private DataInputStream byteCodes;
     private ArrayList<Instruction> instructions;
     private int instructionPointer;
     private Stack<Object> executionStack;
@@ -115,9 +116,9 @@ public class tVm
         while (this.instructionPointer < this.instructions.size())
         {
             Instruction currentInstruction = this.instructions.get(this.instructionPointer++);
+            this.executeInstruction(currentInstruction);
             if (this.showTrace)
                 this.printTrace(currentInstruction);
-            this.executeInstruction(currentInstruction);
         }
     }
 
@@ -297,13 +298,13 @@ public class tVm
 
     private void throwInsufficientStackError(InstructionCode code, int minimumSize)
     {
-        System.err.println("INSUFFICIENT STACK ERROR on " + code.name().toLowerCase() + ": Stack required to have size greater than " + minimumSize);
+        System.err.println("INSUFFICIENT STACK ERROR: " + code.name().toLowerCase() + " requires stack size to be greater than " + minimumSize);
         System.exit(1);
     }
 
     private void throwTypeError(InstructionCode code, Class<?> expectedType)
     {
-        System.err.println("TYPE ERROR on " + code.name().toLowerCase() + ": Expected " + expectedType.getSimpleName() + " type");
+        System.err.println("TYPE ERROR: " + code.name().toLowerCase() + " expected " + expectedType.getSimpleName() + " type(s)");
         System.exit(1);
     }
 

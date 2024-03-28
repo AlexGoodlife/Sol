@@ -17,7 +17,7 @@ public class tSemanticChecker extends TasmBaseListener
     private final HashMap<String, Integer> labelsToInstruction;
     private int instructionCount;
     private boolean halted;
-    ErrorReporter reporter;
+    private final ErrorReporter reporter;
 
 
     public tSemanticChecker(ErrorReporter reporter)
