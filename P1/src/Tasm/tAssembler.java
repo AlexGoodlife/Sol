@@ -61,7 +61,7 @@ public class tAssembler extends TasmBaseListener
     {
         Integer operand = this.labelsToInstruction.get(ctx.LABEL().getText());
         if(operand == null){
-            this.errorReporter.reportError(ctx.getText(), "Invalid jump label");
+            this.errorReporter.reportError(ctx, "Invalid jump label");
             return;
         }
         this.instructions.add(new Instruction(this.nameToCodes.get(ctx.jump.getText()), operand));
@@ -137,10 +137,14 @@ public class tAssembler extends TasmBaseListener
 
     private boolean hasSemanticErrors()
     {
-        boolean hasErrors = this.errorReporter.getErrorCount() > 0;
-        if (hasErrors)
+        int count = this.errorReporter.getErrorCount();
+        if (count > 0){
             this.errorReporter.getErrors().forEach((e) -> System.err.println("ERROR: " + e));
-        return hasErrors;
+            String errors = count > 1 ? " semantic errors" : " semantic error";
+            System.err.println("Program compiled unsuccessfully with " + this.errorReporter.getErrorCount() + errors);
+            System.exit(1);
+        }
+        return false;
     }
 
     private void writeByteCodes() throws IOException

@@ -41,7 +41,7 @@ public class tSemanticChecker extends TasmBaseListener
             {
                 String labelText = label.getText();
                 if(this.labelsToInstruction.containsKey(labelText))
-                    this.reporter.reportError(ctx.getText(), "Duplicate label");
+                    this.reporter.reportError(ctx, "Duplicate label");
                 this.labelsToInstruction.put(labelText, this.instructionCount);
             }
         }
@@ -66,6 +66,6 @@ public class tSemanticChecker extends TasmBaseListener
     @Override
     public void visitErrorNode(ErrorNode node)
     {
-        this.reporter.reportError(node.getText(), "Syntax error");
+        this.reporter.reportError("Syntax error");
     }
 }
