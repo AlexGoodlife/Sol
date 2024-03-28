@@ -142,7 +142,13 @@ public class tVm
                 for (int i = 0; i < instruction.getOperand(); i++)
                     this.globalMemory.add(null);
             }
-            case GLOAD -> this.executionStack.push(this.globalMemory.get(instruction.getOperand()));
+            case GLOAD -> {
+                int index = instruction.getOperand();
+                if(index >= this.globalMemory.size()){
+                    this.throwIndexOutOfBounds(instruction);
+                }
+                this.executionStack.push(index);
+            }
             case HALT -> System.exit(0);
             default -> this.executeStackInstruction(instruction);
         }
@@ -155,7 +161,13 @@ public class tVm
 
         switch (instruction.getInstruction())
         {
-            case GSTORE -> this.globalMemory.set(instruction.getOperand(), this.executionStack.pop());
+            case GSTORE -> {
+                int index = instruction.getOperand();
+                if(index >= this.globalMemory.size()){
+                    this.throwIndexOutOfBounds(instruction);
+                }
+                this.globalMemory.set(index, this.executionStack.pop());
+            }
             case IPRINT, IUMINUS, ITOD, ITOS -> this.intStackInstruction(this.executionStack.pop(), instruction);
             case DPRINT, DUMINUS, DTOS -> this.doubleStackInstruction(this.executionStack.pop(), instruction);
             case BPRINT, NOT, BTOS, JUMPT, JUMPF -> this.booleanStackInstruction(this.executionStack.pop(), instruction);
@@ -225,8 +237,8 @@ public class tVm
         Object left = this.executionStack.pop();
         switch (instruction.getInstruction())
         {
-            case IADD, ISUB, IMOD, IMULT, IEQ, INEQ, ILEQ, ILT -> intStackInstruction(left, right, instruction);
-            case DADD, DSUB, DMULT, DEQ, DNEQ, DLEQ, DLT -> doubleStackInstruction(left, right, instruction);
+            case IADD, ISUB,IDIV, IMOD, IMULT, IEQ, INEQ, ILEQ, ILT -> intStackInstruction(left, right, instruction);
+            case DADD, DSUB,DDIV, DMULT, DEQ, DNEQ, DLEQ, DLT -> doubleStackInstruction(left, right, instruction);
             case SNEQ, SADD, SEQ -> stringStackInstruction(left, right, instruction);
             case BEQ, BNEQ, AND, OR -> booleanStackInstruction(left, right, instruction);
         }
@@ -305,6 +317,17 @@ public class tVm
     private void throwTypeError(InstructionCode code, Class<?> expectedType)
     {
         System.err.println("TYPE ERROR: " + code.name().toLowerCase() + " expected " + expectedType.getSimpleName() + " type(s)");
+        System.exit(1);
+    }
+
+    private void throwIndexOutOfBounds(Instruction instruction)
+    {
+        String message = "INDEX OUT OF BOUNDS ERROR: instruction " +
+                this.instructionPointer +
+                " '" + instruction + "' " +
+                " index " + instruction.getOperand() +
+                " out of bounds for global memory size " + this.globalMemory.size();
+        System.err.println(message);
         System.exit(1);
     }
 
