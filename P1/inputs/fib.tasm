@@ -1,2 +1,42 @@
-            galloc 1
-            iconst 1
+                galloc 4
+
+                iconst 0
+                gstore 0
+                iconst 1
+                gstore 1
+
+                iconst 1
+                gstore 2
+                iconst 46
+                gstore 3
+
+                gload 3
+                iconst 0
+                ieq
+                jumpf _fibStart
+                gload 0
+                iprint
+                halt
+
+_fibStart:      gload 3
+                gload 2
+                ilt
+                jumpf _fibEnd
+
+                gload 0
+                gload 1
+                iadd
+                gload 1
+                gstore 0
+                gstore 1
+
+                gload 2
+                iconst 1
+                iadd
+                gstore 2
+
+                jump _fibStart
+
+_fibEnd:        gload 1
+                iprint
+                halt

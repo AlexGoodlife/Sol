@@ -60,7 +60,7 @@ public class tSemanticChecker extends TasmBaseListener
         walker.walk(this, tree);
 
         if (!this.halted)
-            this.reporter.reportError(null, "Program is not halted");
+            this.reporter.reportError(null, "Program is not halted at any point");
     }
 
     @Override

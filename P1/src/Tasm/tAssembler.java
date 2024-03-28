@@ -8,7 +8,7 @@ import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
 
-public class tCompiler extends TasmBaseListener
+public class tAssembler extends TasmBaseListener
 {
     private static final int MAX_ARGUMENTS_SIZE = 5;
 
@@ -23,13 +23,13 @@ public class tCompiler extends TasmBaseListener
     private String sourceFileName;
     private String byteCodesFileName;
     private boolean showAssembly;
-    private ArrayDeque<Instruction> instructions;
+    private ArrayList<Instruction> instructions;
     private List<Object> constantPool;
     private HashMap<String, InstructionCode> nameToCodes;
     private HashMap<String, Integer> labelsToInstruction;
     private ErrorReporter errorReporter;
 
-    public tCompiler()
+    public tAssembler()
     {
         this.sourceFileName = DEFAULT_SOURCE_FILE_NAME;
         this.byteCodesFileName = DEFAULT_BYTECODES_FILE_NAME;
@@ -39,21 +39,21 @@ public class tCompiler extends TasmBaseListener
     @Override
     public void exitLoadInt(TasmParser.LoadIntContext ctx)
     {
-        this.instructions.push(new Instruction(InstructionCode.ICONST, Integer.valueOf(ctx.INT().getText())));
+        this.instructions.add(new Instruction(InstructionCode.ICONST, Integer.valueOf(ctx.INT().getText())));
     }
 
     @Override
     public void exitLoadDouble(TasmParser.LoadDoubleContext ctx)
     {
         this.constantPool.add(Double.valueOf(ctx.value.getText()));
-        this.instructions.push(new Instruction(InstructionCode.DCONST, this.constantPool.size() - 1));
+        this.instructions.add(new Instruction(InstructionCode.DCONST, this.constantPool.size() - 1));
     }
 
     @Override
     public void exitLoadString(TasmParser.LoadStringContext ctx)
     {
         this.constantPool.add(ctx.STRING().getText().replaceAll("\"", ""));
-        this.instructions.push(new Instruction(InstructionCode.SCONST, this.constantPool.size() - 1));
+        this.instructions.add(new Instruction(InstructionCode.SCONST, this.constantPool.size() - 1));
     }
 
     @Override
@@ -64,20 +64,20 @@ public class tCompiler extends TasmBaseListener
             this.errorReporter.reportError(ctx.getText(), "Invalid jump label");
             return;
         }
-        this.instructions.push(new Instruction(this.nameToCodes.get(ctx.jump.getText()), operand));
+        this.instructions.add(new Instruction(this.nameToCodes.get(ctx.jump.getText()), operand));
     }
 
     @Override
     public void exitGlobal(TasmParser.GlobalContext ctx)
     {
         int operand = Integer.parseInt(ctx.INT().getText());
-        this.instructions.push(new Instruction(this.nameToCodes.get(ctx.global.getText()), operand));
+        this.instructions.add(new Instruction(this.nameToCodes.get(ctx.global.getText()), operand));
     }
 
     @Override
     public void exitSimpleInstruction(TasmParser.SimpleInstructionContext ctx)
     {
-        this.instructions.push(new Instruction(this.nameToCodes.get(ctx.SIMPLE_INSTRUCTION().getText())));
+        this.instructions.add(new Instruction(this.nameToCodes.get(ctx.SIMPLE_INSTRUCTION().getText())));
     }
 
     public void compile(String[] args) throws IOException
@@ -128,7 +128,7 @@ public class tCompiler extends TasmBaseListener
 
     private void initCompilerVariables()
     {
-        this.instructions = new ArrayDeque<>();
+        this.instructions = new ArrayList<>();
         this.constantPool = new ArrayList<>();
         this.nameToCodes = new HashMap<>();
         Arrays.stream(InstructionCode.values()).forEach((code) -> this.nameToCodes.put(code.name().toLowerCase(), code));
@@ -139,7 +139,7 @@ public class tCompiler extends TasmBaseListener
     {
         boolean hasErrors = this.errorReporter.getErrorCount() > 0;
         if (hasErrors)
-            this.errorReporter.getErrors().forEach((e) -> System.err.println("ERROR: " + e.getCtx() + " " + e.getMessage()));
+            this.errorReporter.getErrors().forEach((e) -> System.err.println("ERROR: " + e));
         return hasErrors;
     }
 
@@ -148,19 +148,17 @@ public class tCompiler extends TasmBaseListener
         DataOutputStream byteCodes = new DataOutputStream(new FileOutputStream(this.byteCodesFileName));
         this.writeInstructions(byteCodes);
         this.writeConstantPool(byteCodes);
+        if (this.showAssembly)
+            this.printAssembledByteCodes();
     }
 
     private void writeInstructions(DataOutputStream byteCodes) throws IOException
     {
-        while (!this.instructions.isEmpty())
+        for (Instruction instruction : this.instructions)
         {
-            Instruction instruction = this.instructions.removeLast();
             byteCodes.writeByte(instruction.getInstruction().ordinal());
             if (instruction.getOperand() != null)
                 byteCodes.writeInt(instruction.getOperand());
-
-            if (this.showAssembly)
-                System.out.println(instruction);
         }
         byteCodes.writeByte(InstructionCode.END.ordinal());
     }
@@ -182,9 +180,19 @@ public class tCompiler extends TasmBaseListener
             }
     }
 
+    private void printAssembledByteCodes()
+    {
+        System.out.println("ASSEMBLED INSTRUCTIONS:");
+        for (int i = 0; i < this.instructions.size(); i++)
+            System.out.println(i + ":\t" + this.instructions.get(i));
+
+        System.out.println("\nASSEMBLED CONSTANT POOL:");
+        System.out.println(this.constantPool);
+    }
+
     public static void main(String[] args) throws IOException
     {
-        tCompiler compiler = new tCompiler();
+        tAssembler compiler = new tAssembler();
         compiler.compile(args);
     }
 }

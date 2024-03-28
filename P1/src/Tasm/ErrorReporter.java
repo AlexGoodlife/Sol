@@ -1,7 +1,5 @@
 package Tasm;
 
-import org.antlr.v4.runtime.ParserRuleContext;
-
 import java.util.ArrayList;
 import java.util.List;
 
@@ -19,14 +17,11 @@ public class ErrorReporter
             this.message = message;
         }
 
-        public String getMessage()
+        @Override
+        public String toString()
         {
-            return this.message;
-        }
-
-        public String getCtx()
-        {
-            return this.ctx;
+            String s = this.message;
+            return this.ctx != null ? s + " on " + this.ctx : s;
         }
     }
 

@@ -24,7 +24,6 @@ simpleInstruction:  SIMPLE_INSTRUCTION  //Will need hash map or a giant switch c
 INT: DIGIT+;
 DOUBLE: DIGIT+'.'DIGIT+;
 STRING: '"'.*?'"';
-BOOL: 'true' | 'false';
 
 //One argument instructions
 //Load instructions
