@@ -1,0 +1,60 @@
+iconst 1
+iprint
+iconst 2
+iuminus
+iconst 3
+iadd
+iconst 5
+isub
+iconst 4
+imult
+iconst 1
+idiv
+iconst 10
+imod
+iconst 1
+ieq
+iconst 1
+iconst 1
+ineq
+iconst 1
+iconst 1
+ilt
+ileq
+itod
+itos
+dconst 2.0
+dprint
+duminus
+dadd
+dsub
+dmult
+ddiv
+deq
+dneq
+dlt
+dleq
+dtos
+sconst "Hello"
+sprint
+sadd
+seq
+sneq
+fconst
+tconst
+bprint
+beq
+helo : bneq
+and
+or
+not
+btos
+jump helo
+jumpf helo
+jumpt helo
+galloc 2
+gload 2
+gstore 2
+halt
+
+
