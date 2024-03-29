@@ -120,7 +120,7 @@ public class tAssembler extends TasmBaseListener
                 case SOURCE_FILE_FLAG:
                     String filename = args[++i];
                     this.sourceFileName = filename;
-                    this.byteCodesFileName = filename.replaceAll(".tasm", ".tbc");
+                    this.byteCodesFileName = filename.replaceAll("\\.tasm", ".tbc");
                     break;
                 case BYTECODES_FILE_FLAG:
                     this.byteCodesFileName = args[++i];
