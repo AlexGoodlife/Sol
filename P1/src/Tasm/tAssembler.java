@@ -118,7 +118,9 @@ public class tAssembler extends TasmBaseListener
             switch (args[i])
             {
                 case SOURCE_FILE_FLAG:
-                    this.sourceFileName = args[++i];
+                    String filename = args[++i];
+                    this.sourceFileName = filename;
+                    this.byteCodesFileName = filename.replaceAll(".tasm", ".tbc");
                     break;
                 case BYTECODES_FILE_FLAG:
                     this.byteCodesFileName = args[++i];
