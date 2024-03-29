@@ -13,22 +13,22 @@ import java.util.HashMap;
  */
 public class tSemanticChecker extends TasmBaseListener
 {
-    private final HashMap<String, Integer> labelsToInstruction;
+    private final HashMap<String, Integer> labelToInstruction;
     private int instructionCount;
     private boolean halted;
     private final ErrorReporter reporter;
 
     public tSemanticChecker(ErrorReporter reporter)
     {
-        this.labelsToInstruction = new HashMap<>();
+        this.labelToInstruction = new HashMap<>();
         this.instructionCount = 0;
         this.halted = false;
         this.reporter = reporter;
     }
 
-    public HashMap<String, Integer> getLabelsToInstruction()
+    public HashMap<String, Integer> getLabelToInstruction()
     {
-        return this.labelsToInstruction;
+        return this.labelToInstruction;
     }
 
     @Override
@@ -39,9 +39,9 @@ public class tSemanticChecker extends TasmBaseListener
             for(TerminalNode label : ctx.getTokens(TasmParser.LABEL))
             {
                 String labelText = label.getText();
-                if(this.labelsToInstruction.containsKey(labelText))
+                if (this.labelToInstruction.containsKey(labelText))
                     this.reporter.reportError(ctx, "Duplicate label");
-                this.labelsToInstruction.put(labelText, this.instructionCount);
+                this.labelToInstruction.put(labelText, this.instructionCount);
             }
         }
         this.instructionCount++;

@@ -7,7 +7,6 @@ import org.antlr.v4.runtime.tree.*;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
-import java.util.regex.Pattern;
 
 public class tAssembler extends TasmBaseListener
 {
@@ -28,8 +27,9 @@ public class tAssembler extends TasmBaseListener
     private TasmParser parser;
     private ArrayList<Instruction> instructions;
     private List<Object> constantPool;
-    private HashMap<String, InstructionCode> nameToCodes;
-    private HashMap<String, Integer> labelsToInstruction;
+    private HashMap<Object, Integer> constantPoolChecker;
+    private HashMap<String, InstructionCode> nameToCode;
+    private HashMap<String, Integer> labelToInstruction;
     private ErrorReporter semanticErrorReporter;
 
     public tAssembler()
@@ -51,16 +51,18 @@ public class tAssembler extends TasmBaseListener
     @Override
     public void exitLoadDouble(TasmParser.LoadDoubleContext ctx)
     {
-        if(ctx.DOUBLE() == null && ctx.INT() == null){
+        if(ctx.DOUBLE() == null && ctx.INT() == null)
             return;
-        }
+
         Double readDouble = Double.valueOf(ctx.value.getText());
-        int index = this.constantPool.indexOf(readDouble);
-        if(index == -1){
+        Integer index = this.constantPoolChecker.get(readDouble);
+        if (index == null)
+        {
             this.constantPool.add(readDouble);
+            index = this.constantPool.size() - 1;
+            this.constantPoolChecker.put(readDouble, index);
         }
-        int poolIndex = index != -1 ? index : this.constantPool.size() - 1;
-        this.instructions.add(new Instruction(InstructionCode.DCONST, poolIndex));
+        this.instructions.add(new Instruction(InstructionCode.DCONST, index));
     }
 
     @Override
@@ -70,12 +72,14 @@ public class tAssembler extends TasmBaseListener
             return;
 
         String readString = ctx.STRING().getText().replaceAll("\"", "");
-        int index = this.constantPool.indexOf(readString);
-        if(index == -1){
+        Integer index = this.constantPoolChecker.get(readString);
+        if (index == null)
+        {
             this.constantPool.add(readString);
+            index = this.constantPool.size() - 1;
+            this.constantPoolChecker.put(readString, index);
         }
-        int poolIndex = index != -1 ? index : this.constantPool.size() - 1;
-        this.instructions.add(new Instruction(InstructionCode.SCONST, poolIndex));
+        this.instructions.add(new Instruction(InstructionCode.SCONST, index));
     }
 
     @Override
@@ -84,11 +88,11 @@ public class tAssembler extends TasmBaseListener
         if (ctx.LABEL() == null)
             return;
 
-        Integer operand = this.labelsToInstruction.get(ctx.LABEL().getText());
+        Integer operand = this.labelToInstruction.get(ctx.LABEL().getText());
         if(operand == null)
             this.semanticErrorReporter.reportError(ctx, "Invalid jump label");
         else
-            this.instructions.add(new Instruction(this.nameToCodes.get(ctx.jump.getText()), operand));
+            this.instructions.add(new Instruction(this.nameToCode.get(ctx.jump.getText()), operand));
     }
 
     @Override
@@ -98,13 +102,13 @@ public class tAssembler extends TasmBaseListener
             return;
 
         int operand = Integer.parseInt(ctx.INT().getText());
-        this.instructions.add(new Instruction(this.nameToCodes.get(ctx.global.getText()), operand));
+        this.instructions.add(new Instruction(this.nameToCode.get(ctx.global.getText()), operand));
     }
 
     @Override
     public void exitSimpleInstruction(TasmParser.SimpleInstructionContext ctx)
     {
-        this.instructions.add(new Instruction(this.nameToCodes.get(ctx.SIMPLE_INSTRUCTION().getText())));
+        this.instructions.add(new Instruction(this.nameToCode.get(ctx.SIMPLE_INSTRUCTION().getText())));
     }
 
     public void assemble(String[] args) throws IOException
@@ -147,8 +151,9 @@ public class tAssembler extends TasmBaseListener
         this.parser = this.generateParser();
         this.instructions = new ArrayList<>();
         this.constantPool = new ArrayList<>();
-        this.nameToCodes = new HashMap<>();
-        Arrays.stream(InstructionCode.values()).forEach((code) -> this.nameToCodes.put(code.name().toLowerCase(), code));
+        this.constantPoolChecker = new HashMap<>();
+        this.nameToCode = new HashMap<>();
+        Arrays.stream(InstructionCode.values()).forEach((code) -> this.nameToCode.put(code.name().toLowerCase(), code));
         this.semanticErrorReporter = new ErrorReporter();
     }
 
@@ -169,7 +174,7 @@ public class tAssembler extends TasmBaseListener
         ParseTree tree = this.parser.program();
         tSemanticChecker checker = new tSemanticChecker(this.semanticErrorReporter);
         checker.semanticCheck(tree);
-        this.labelsToInstruction = checker.getLabelsToInstruction();
+        this.labelToInstruction = checker.getLabelToInstruction();
 
         ParseTreeWalker walker = new ParseTreeWalker();
         walker.walk(this, tree);
