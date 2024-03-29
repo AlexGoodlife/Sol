@@ -1,0 +1,3 @@
+iconst 5
+iadd
+halt

@@ -51,12 +51,16 @@ public class tAssembler extends TasmBaseListener
     @Override
     public void exitLoadDouble(TasmParser.LoadDoubleContext ctx)
     {
-        //Cuz it ain't null here
-        if (!Pattern.matches("-?\\d+\\.?\\d+", ctx.value.getText()))
+        if(ctx.DOUBLE() == null && ctx.INT() == null){
             return;
-
-        this.constantPool.add(Double.valueOf(ctx.value.getText()));
-        this.instructions.add(new Instruction(InstructionCode.DCONST, this.constantPool.size() - 1));
+        }
+        Double readDouble = Double.valueOf(ctx.value.getText());
+        int index = this.constantPool.indexOf(readDouble);
+        if(index == -1){
+            this.constantPool.add(readDouble);
+        }
+        int poolIndex = index != -1 ? index : this.constantPool.size() - 1;
+        this.instructions.add(new Instruction(InstructionCode.DCONST, poolIndex));
     }
 
     @Override
@@ -65,8 +69,13 @@ public class tAssembler extends TasmBaseListener
         if (ctx.STRING() == null)
             return;
 
-        this.constantPool.add(ctx.STRING().getText().replaceAll("\"", ""));
-        this.instructions.add(new Instruction(InstructionCode.SCONST, this.constantPool.size() - 1));
+        String readString = ctx.STRING().getText().replaceAll("\"", "");
+        int index = this.constantPool.indexOf(readString);
+        if(index == -1){
+            this.constantPool.add(readString);
+        }
+        int poolIndex = index != -1 ? index : this.constantPool.size() - 1;
+        this.instructions.add(new Instruction(InstructionCode.SCONST, poolIndex));
     }
 
     @Override
