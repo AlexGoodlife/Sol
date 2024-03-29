@@ -129,7 +129,12 @@ public class tVm
         String s = currentInstruction.toString();
         String opStr = s + " ".repeat(Math.max(0, 20 - s.length()));
         System.out.println("\n" + this.instructionPointer + ":" + "\t" + opStr + "\tStack:\t" + this.executionStack);
-        System.out.println("\t".repeat(7) + "Global Memory:\t" + this.globalMemory);
+        System.out.println
+        (
+            "\t".repeat(7) +
+            "Global Memory:\t" +
+            this.globalMemory.toString().replaceAll("null", "NIL")
+        );
     }
 
     private void executeInstruction(Instruction instruction)

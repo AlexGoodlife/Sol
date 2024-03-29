@@ -1,0 +1,3 @@
+sconst "Hello World"
+sprint
+halt
