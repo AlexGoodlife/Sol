@@ -27,15 +27,15 @@ iconst 1
 itod
 iconst 1
 itos
-dconst 2.0
+dconst -2.0
 dprint
-dconst 1.0
+dconst -1.0
 duminus
-dconst 1.0
+dconst -1.0
 dadd
-dconst 1.0
+dconst -1.0
 dsub
-dconst 1.0
+dconst -1.0
 dmult
 dconst 1.0
 ddiv

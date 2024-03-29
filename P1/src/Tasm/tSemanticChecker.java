@@ -1,6 +1,5 @@
 package Tasm;
 
-import org.antlr.v4.runtime.tree.ErrorNode;
 import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.ParseTreeWalker;
 import org.antlr.v4.runtime.tree.TerminalNode;
@@ -17,8 +16,7 @@ public class tSemanticChecker extends TasmBaseListener
     private final HashMap<String, Integer> labelsToInstruction;
     private int instructionCount;
     private boolean halted;
-    ErrorReporter reporter;
-
+    private final ErrorReporter reporter;
 
     public tSemanticChecker(ErrorReporter reporter)
     {
@@ -62,11 +60,5 @@ public class tSemanticChecker extends TasmBaseListener
 
         if (!this.halted)
             this.reporter.reportError(null, "Program is not halted at any point");
-    }
-
-    @Override
-    public void visitErrorNode(ErrorNode node)
-    {
-        this.reporter.reportError("Syntax error");
     }
 }

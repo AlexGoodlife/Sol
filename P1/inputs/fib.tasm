@@ -18,8 +18,8 @@
                 iprint
                 halt
 
-_fibStart:      gload 3
-                gload 2
+_fibStart:      gload 2
+                gload 3
                 ilt
                 jumpf _fibEnd
 

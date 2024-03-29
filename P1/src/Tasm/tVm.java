@@ -3,10 +3,12 @@ package Tasm;
 import java.io.*;
 import java.util.ArrayList;
 import java.util.Stack;
+import java.util.stream.IntStream;
 
 public class tVm
 {
     public static final int MAX_ARGUMENTS_SIZE = 3;
+
     private static final String BYTECODES_FILE_FLAG = "-b";
     private static final String TRACE_FLAG = "--trace";
 
@@ -116,9 +118,9 @@ public class tVm
         while (this.instructionPointer < this.instructions.size())
         {
             Instruction currentInstruction = this.instructions.get(this.instructionPointer++);
-            this.executeInstruction(currentInstruction);
             if (this.showTrace)
                 this.printTrace(currentInstruction);
+            this.executeInstruction(currentInstruction);
         }
     }
 
@@ -138,36 +140,34 @@ public class tVm
             case DCONST, SCONST -> this.executionStack.push(this.constantPool.get(instruction.getOperand()));
             case TCONST, FCONST -> this.executionStack.push(instruction.getInstruction() == InstructionCode.TCONST);
             case JUMP -> this.instructionPointer = instruction.getOperand();
-            case GALLOC -> {
-                for (int i = 0; i < instruction.getOperand(); i++)
-                    this.globalMemory.add(null);
-            }
-            case GLOAD -> {
-                int index = instruction.getOperand();
-                if(index >= this.globalMemory.size()){
-                    this.throwIndexOutOfBounds(instruction);
-                }
-                this.executionStack.push(index);
-            }
+            case GALLOC -> IntStream.range(0, instruction.getOperand()).forEach(index -> this.globalMemory.add(null));
+            case GLOAD -> this.executeGlobalMemoryAccessInstruction(instruction);
             case HALT -> System.exit(0);
             default -> this.executeStackInstruction(instruction);
+        }
+    }
+
+    private void executeGlobalMemoryAccessInstruction(Instruction instruction)
+    {
+        int index = instruction.getOperand();
+        if (index >= this.globalMemory.size())
+            this.throwIndexOutOfBounds(instruction);
+
+        switch (instruction.getInstruction())
+        {
+            case GLOAD -> this.executionStack.push(this.globalMemory.get(index));
+            case GSTORE -> this.globalMemory.set(index, this.executionStack.pop());
         }
     }
 
     private void executeStackInstruction(Instruction instruction)
     {
         if (this.executionStack.isEmpty())
-            this.throwInsufficientStackError(instruction.getInstruction(), 1);
+            this.throwInsufficientStackError(instruction);
 
         switch (instruction.getInstruction())
         {
-            case GSTORE -> {
-                int index = instruction.getOperand();
-                if(index >= this.globalMemory.size()){
-                    this.throwIndexOutOfBounds(instruction);
-                }
-                this.globalMemory.set(index, this.executionStack.pop());
-            }
+            case GSTORE -> this.executeGlobalMemoryAccessInstruction(instruction);
             case IPRINT, IUMINUS, ITOD, ITOS -> this.intStackInstruction(this.executionStack.pop(), instruction);
             case DPRINT, DUMINUS, DTOS -> this.doubleStackInstruction(this.executionStack.pop(), instruction);
             case BPRINT, NOT, BTOS, JUMPT, JUMPF -> this.booleanStackInstruction(this.executionStack.pop(), instruction);
@@ -175,7 +175,7 @@ public class tVm
                 if (this.executionStack.pop() instanceof String poppedString)
                     System.out.println(poppedString);
                 else
-                    this.throwTypeError(instruction.getInstruction(), String.class);
+                    this.throwTypeError(instruction, String.class);
             }
             default -> this.executeTwoOperandsInstruction(instruction);
         }
@@ -192,7 +192,7 @@ public class tVm
                 case ITOS -> this.executionStack.push(String.valueOf(poppedInt));
             }
         else
-            this.throwTypeError(instruction.getInstruction(), Integer.class);
+            this.throwTypeError(instruction, Integer.class);
     }
 
     private void doubleStackInstruction(Object popped, Instruction instruction)
@@ -205,7 +205,7 @@ public class tVm
                 case DTOS -> this.executionStack.push(String.valueOf(poppedDouble));
             }
         else
-            this.throwTypeError(instruction.getInstruction(), Double.class);
+            this.throwTypeError(instruction, Double.class);
     }
     private void booleanStackInstruction(Object popped, Instruction instruction)
     {
@@ -225,22 +225,22 @@ public class tVm
                 }
             }
         else
-            this.throwTypeError(instruction.getInstruction(), Boolean.class);
+            this.throwTypeError(instruction, Boolean.class);
     }
 
     private void executeTwoOperandsInstruction(Instruction instruction)
     {
         if (this.executionStack.size() < 2)
-            this.throwInsufficientStackError(instruction.getInstruction(), 2);
+            this.throwInsufficientStackError(instruction);
 
         Object right = this.executionStack.pop();
         Object left = this.executionStack.pop();
         switch (instruction.getInstruction())
         {
-            case IADD, ISUB,IDIV, IMOD, IMULT, IEQ, INEQ, ILEQ, ILT -> intStackInstruction(left, right, instruction);
-            case DADD, DSUB,DDIV, DMULT, DEQ, DNEQ, DLEQ, DLT -> doubleStackInstruction(left, right, instruction);
-            case SNEQ, SADD, SEQ -> stringStackInstruction(left, right, instruction);
-            case BEQ, BNEQ, AND, OR -> booleanStackInstruction(left, right, instruction);
+            case IADD, ISUB, IMULT, IDIV, IMOD, IEQ, INEQ, ILEQ, ILT -> this.intStackInstruction(left, right, instruction);
+            case DADD, DSUB, DMULT, DDIV, DEQ, DNEQ, DLEQ, DLT -> this.doubleStackInstruction(left, right, instruction);
+            case SNEQ, SADD, SEQ -> this.stringStackInstruction(left, right, instruction);
+            case BEQ, BNEQ, AND, OR -> this.booleanStackInstruction(left, right, instruction);
         }
     }
 
@@ -256,11 +256,11 @@ public class tVm
                 case IMOD -> this.executionStack.push(leftInt % rightInt);
                 case IEQ -> this.executionStack.push(leftInt.equals(rightInt));
                 case INEQ -> this.executionStack.push(!leftInt.equals(rightInt));
-                case ILEQ -> this.executionStack.push(rightInt.compareTo(leftInt) <= 0 );
-                case ILT -> this.executionStack.push(rightInt.compareTo(leftInt) < 0 );
+                case ILEQ -> this.executionStack.push(leftInt.compareTo(rightInt) <= 0 );
+                case ILT -> this.executionStack.push(leftInt.compareTo(rightInt) < 0 );
             }
         else
-            this.throwTypeError(instruction.getInstruction(), Integer.class);
+            this.throwTypeError(instruction, Integer.class);
     }
 
     private void doubleStackInstruction(Object left, Object right, Instruction instruction)
@@ -278,7 +278,7 @@ public class tVm
                 case DLT -> this.executionStack.push(leftDouble.compareTo(rightDouble) < 0 );
             }
         else
-            this.throwTypeError(instruction.getInstruction(), Double.class);
+            this.throwTypeError(instruction, Double.class);
     }
 
     private void stringStackInstruction(Object left, Object right, Instruction instruction)
@@ -291,7 +291,7 @@ public class tVm
                 case SNEQ -> this.executionStack.push(!leftString.equals(rightString));
             }
         else
-            this.throwTypeError(instruction.getInstruction(), String.class);
+            this.throwTypeError(instruction, String.class);
     }
 
     private void booleanStackInstruction(Object left, Object right, Instruction instruction)
@@ -305,28 +305,34 @@ public class tVm
                 case OR -> this.executionStack.push(leftBoolean || rightBoolean);
             }
         else
-            this.throwTypeError(instruction.getInstruction(), Boolean.class);
+            this.throwTypeError(instruction, Boolean.class);
     }
 
-    private void throwInsufficientStackError(InstructionCode code, int minimumSize)
+    private void throwInsufficientStackError(Instruction instruction)
     {
-        System.err.println("INSUFFICIENT STACK ERROR: " + code.name().toLowerCase() + " requires stack size to be greater than " + minimumSize);
+        String message = this.instructionPointer + ":0 " +
+                "Stack doesn't have enough elements for '" +
+                instruction + "'; Stack: " + this.executionStack;
+        System.err.println(message);
         System.exit(1);
     }
 
-    private void throwTypeError(InstructionCode code, Class<?> expectedType)
+    private void throwTypeError(Instruction instruction, Class<?> expectedType)
     {
-        System.err.println("TYPE ERROR: " + code.name().toLowerCase() + " expected " + expectedType.getSimpleName() + " type(s)");
+        String message = this.instructionPointer + ":0 " +
+                "Expected " + expectedType.getSimpleName() +
+                " type for '" + instruction + "'";
+        System.err.println(message);
         System.exit(1);
     }
 
     private void throwIndexOutOfBounds(Instruction instruction)
     {
-        String message = "INDEX OUT OF BOUNDS ERROR: instruction " +
-                this.instructionPointer +
-                " '" + instruction + "' " +
-                " index " + instruction.getOperand() +
-                " out of bounds for global memory size " + this.globalMemory.size();
+        String message = this.instructionPointer + ":0 " +
+                "Index " + instruction.getOperand() +
+                " out of bounds for global memory size " +
+                this.globalMemory.size() +
+                " '" + instruction + "'";
         System.err.println(message);
         System.exit(1);
     }

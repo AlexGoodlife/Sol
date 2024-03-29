@@ -1,4 +1,4 @@
-// Generated from /home/alex/uni/COP_2324/cop_projeto/P1/src/Tasm.g4 by ANTLR 4.13.1
+// Generated from C:/Users/Acer/Desktop/Programations/cop_projeto/P1/src/Tasm.g4 by ANTLR 4.13.1
 package antlrTasm;
 import org.antlr.v4.runtime.tree.AbstractParseTreeVisitor;
 

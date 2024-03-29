@@ -7,6 +7,7 @@ import org.antlr.v4.runtime.tree.*;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.util.*;
+import java.util.regex.Pattern;
 
 public class tAssembler extends TasmBaseListener
 {
@@ -29,9 +30,7 @@ public class tAssembler extends TasmBaseListener
     private List<Object> constantPool;
     private HashMap<String, InstructionCode> nameToCodes;
     private HashMap<String, Integer> labelsToInstruction;
-    private ErrorReporter errorReporter;
-
-    private int syntaxErrorCount;
+    private ErrorReporter semanticErrorReporter;
 
     public tAssembler()
     {
@@ -43,12 +42,19 @@ public class tAssembler extends TasmBaseListener
     @Override
     public void exitLoadInt(TasmParser.LoadIntContext ctx)
     {
+        if (ctx.INT() == null)
+            return;
+
         this.instructions.add(new Instruction(InstructionCode.ICONST, Integer.valueOf(ctx.INT().getText())));
     }
 
     @Override
     public void exitLoadDouble(TasmParser.LoadDoubleContext ctx)
     {
+        //Cuz it ain't null here
+        if (!Pattern.matches("-?\\d+\\.?\\d+", ctx.value.getText()))
+            return;
+
         this.constantPool.add(Double.valueOf(ctx.value.getText()));
         this.instructions.add(new Instruction(InstructionCode.DCONST, this.constantPool.size() - 1));
     }
@@ -56,6 +62,9 @@ public class tAssembler extends TasmBaseListener
     @Override
     public void exitLoadString(TasmParser.LoadStringContext ctx)
     {
+        if (ctx.STRING() == null)
+            return;
+
         this.constantPool.add(ctx.STRING().getText().replaceAll("\"", ""));
         this.instructions.add(new Instruction(InstructionCode.SCONST, this.constantPool.size() - 1));
     }
@@ -63,17 +72,22 @@ public class tAssembler extends TasmBaseListener
     @Override
     public void exitJump(TasmParser.JumpContext ctx)
     {
-        Integer operand = this.labelsToInstruction.get(ctx.LABEL().getText());
-        if(operand == null){
-            this.errorReporter.reportError(ctx, "Invalid jump label");
+        if (ctx.LABEL() == null)
             return;
-        }
-        this.instructions.add(new Instruction(this.nameToCodes.get(ctx.jump.getText()), operand));
+
+        Integer operand = this.labelsToInstruction.get(ctx.LABEL().getText());
+        if(operand == null)
+            this.semanticErrorReporter.reportError(ctx, "Invalid jump label");
+        else
+            this.instructions.add(new Instruction(this.nameToCodes.get(ctx.jump.getText()), operand));
     }
 
     @Override
     public void exitGlobal(TasmParser.GlobalContext ctx)
     {
+        if (ctx.INT() == null)
+            return;
+
         int operand = Integer.parseInt(ctx.INT().getText());
         this.instructions.add(new Instruction(this.nameToCodes.get(ctx.global.getText()), operand));
     }
@@ -89,12 +103,11 @@ public class tAssembler extends TasmBaseListener
         this.parseArguments(args);
         this.initCompiler();
         this.assembleInstructions();
-        if (this.errorReporter.hasReportedErrors() || this.syntaxErrorCount > 0)
-            this.throwUnsuccessfulAssemble();
-        else
+        if (this.successfulAssemble())
             this.writeByteCodes();
+        else
+            this.throwUnsuccessfulAssemble();
     }
-
 
     private void parseArguments(String[] args)
     {
@@ -125,9 +138,8 @@ public class tAssembler extends TasmBaseListener
         this.constantPool = new ArrayList<>();
         this.nameToCodes = new HashMap<>();
         Arrays.stream(InstructionCode.values()).forEach((code) -> this.nameToCodes.put(code.name().toLowerCase(), code));
-        this.errorReporter = new ErrorReporter();
+        this.semanticErrorReporter = new ErrorReporter();
     }
-
 
     private TasmParser generateParser() throws IOException
     {
@@ -140,37 +152,37 @@ public class tAssembler extends TasmBaseListener
 
     private void assembleInstructions()
     {
+        // We walk the tree twice
+        // First to check semantic errors and storing all labels
+        // Second to assemble code and check for jumps with invalid labels
         ParseTree tree = this.parser.program();
-        tSemanticChecker checker = new tSemanticChecker(this.errorReporter);
+        tSemanticChecker checker = new tSemanticChecker(this.semanticErrorReporter);
         checker.semanticCheck(tree);
         this.labelsToInstruction = checker.getLabelsToInstruction();
-        this.syntaxErrorCount = parser.getNumberOfSyntaxErrors();
+
         ParseTreeWalker walker = new ParseTreeWalker();
         walker.walk(this, tree);
     }
 
+    private boolean successfulAssemble()
+    {
+        return !this.semanticErrorReporter.hasReportedErrors() && !(this.parser.getNumberOfSyntaxErrors() > 0);
+    }
+
     private void throwUnsuccessfulAssemble()
     {
-        int count  = this.errorReporter.getErrorCount();
-        boolean hasSemanticErrors = count > 0;
-        boolean hasSyntaxErrors =  this.syntaxErrorCount > 0;
-        if (hasSemanticErrors || hasSyntaxErrors){
-            StringBuilder message = new StringBuilder();
-            message.append("Program compiled unsuccessfully with ");
-            if(hasSyntaxErrors){
-                String syntaxErrors = syntaxErrorCount > 1 ? " syntax errors" : " syntax error";
-                message.append(this.syntaxErrorCount).append(syntaxErrors);
-                if(hasSemanticErrors) message.append(" and ");
-            }
-            if(hasSemanticErrors){
-                this.errorReporter.getErrors().forEach((e) -> System.err.println("ERROR: " + e));
-                String semanticErrors = count > 1 ? " semantic errors" : " semantic error";
-                message.append(count).append(semanticErrors);
+        //ANTLR should print all the syntax errors prior, if any
+        System.err.println(this.semanticErrorReporter);
 
-            }
-            System.err.println(message);
-            System.exit(1);
-        }
+        int semanticErrorCount = this.semanticErrorReporter.getErrorCount();
+        int syntaxErrorCount = this.parser.getNumberOfSyntaxErrors();
+        String syntaxErrors = syntaxErrorCount == 1 ? " syntax error " : " syntax errors ";
+        String semanticErrors = semanticErrorCount == 1 ? " semantic error" : " semantic errors";
+        String message = "Program assembled unsuccessfully with " + syntaxErrorCount + syntaxErrors +
+                "and " + semanticErrorCount + semanticErrors;
+
+        System.err.println(message);
+        System.exit(1);
     }
 
     private void writeByteCodes() throws IOException
@@ -214,7 +226,7 @@ public class tAssembler extends TasmBaseListener
     {
         System.out.println("ASSEMBLED INSTRUCTIONS:");
         for (int i = 0; i < this.instructions.size(); i++)
-            System.out.println(i + ":\t" + this.instructions.get(i));
+            System.out.println(i + 1 + ":\t" + this.instructions.get(i));
 
         System.out.println("\nASSEMBLED CONSTANT POOL:");
         System.out.println(this.constantPool);
