@@ -50,7 +50,7 @@ public class tSemanticChecker extends TasmBaseListener
     @Override
     public void exitSimpleInstruction(TasmParser.SimpleInstructionContext ctx)
     {
-        this.halted = ctx.SIMPLE_INSTRUCTION().getText().equals(InstructionCode.HALT.name().toLowerCase());
+            this.halted = halted || ctx.SIMPLE_INSTRUCTION().getText().equals(InstructionCode.HALT.name().toLowerCase());
     }
 
     public void semanticCheck(ParseTree tree)

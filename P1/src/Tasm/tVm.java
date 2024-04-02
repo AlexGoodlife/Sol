@@ -122,6 +122,10 @@ public class tVm
                 this.printTrace(currentInstruction);
             this.executeInstruction(currentInstruction);
         }
+        Instruction lastInstruction = this.instructions.get(this.instructionPointer - 1);
+        if(!lastInstruction.getInstruction().equals(InstructionCode.HALT)){
+            throwGenericError(lastInstruction, "Program terminated with a non halt instruction");
+        }
     }
 
     private void printTrace(Instruction currentInstruction)
@@ -177,10 +181,8 @@ public class tVm
             case DPRINT, DUMINUS, DTOS -> this.doubleStackInstruction(this.executionStack.pop(), instruction);
             case BPRINT, NOT, BTOS, JUMPT, JUMPF -> this.booleanStackInstruction(this.executionStack.pop(), instruction);
             case SPRINT -> {
-                if (this.executionStack.pop() instanceof String poppedString) {
-                    String escaped = getEscapedContent(poppedString);
-                    System.out.println(escaped);
-                }
+                if (this.executionStack.pop() instanceof String poppedString)
+                    System.out.println(getEscapedContent(poppedString));
                 else
                     this.throwTypeError(instruction, String.class);
             }
@@ -261,7 +263,12 @@ public class tVm
                 case IADD -> this.executionStack.push(leftInt + rightInt );
                 case ISUB -> this.executionStack.push(leftInt - rightInt);
                 case IMULT -> this.executionStack.push(leftInt * rightInt);
-                case IDIV -> this.executionStack.push(leftInt / rightInt);
+                case IDIV -> {
+                    if(rightInt == 0){
+                        throwGenericError(instruction, "Division by 0 error");
+                    }
+                    this.executionStack.push(leftInt / rightInt);
+                }
                 case IMOD -> this.executionStack.push(leftInt % rightInt);
                 case IEQ -> this.executionStack.push(leftInt.equals(rightInt));
                 case INEQ -> this.executionStack.push(!leftInt.equals(rightInt));
@@ -280,7 +287,12 @@ public class tVm
                 case DADD -> this.executionStack.push(leftDouble + rightDouble );
                 case DSUB -> this.executionStack.push(leftDouble - rightDouble);
                 case DMULT -> this.executionStack.push(leftDouble * rightDouble);
-                case DDIV -> this.executionStack.push(leftDouble / rightDouble);
+                case DDIV -> {
+                    if(rightDouble == 0){
+                        throwGenericError(instruction, "Division by 0 error");
+                    }
+                    this.executionStack.push(leftDouble / rightDouble);
+                }
                 case DEQ -> this.executionStack.push(leftDouble.equals(rightDouble));
                 case DNEQ -> this.executionStack.push(!leftDouble.equals(rightDouble));
                 case DLEQ -> this.executionStack.push(leftDouble.compareTo(rightDouble) <= 0 );
@@ -335,7 +347,12 @@ public class tVm
         System.err.println(message);
         System.exit(1);
     }
-
+    private void throwGenericError(Instruction instruction, String errorMessage)
+    {
+        String message = this.instructionPointer + ":0 " + instruction + " "  + errorMessage;
+        System.err.println(message);
+        System.exit(1);
+    }
     private void throwIndexOutOfBounds(Instruction instruction)
     {
         String message = this.instructionPointer + ":0 " +

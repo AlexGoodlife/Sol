@@ -1,0 +1,5 @@
+sconst "\tHello \"\\World\n"
+sprint
+sconst "\n"
+sprint
+halt
