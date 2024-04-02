@@ -71,7 +71,9 @@ public class tAssembler extends TasmBaseListener
         if (ctx.STRING() == null)
             return;
 
-        String readString = ctx.STRING().getText().replaceAll("\"", "");
+        String rawString = ctx.STRING().getText();
+        String readString = rawString.substring(1, rawString.length()-1).replaceAll("\\\\([\"\\\\])", "$1");
+
         Integer index = this.constantPoolChecker.get(readString);
         if (index == null)
         {

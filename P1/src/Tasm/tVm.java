@@ -177,15 +177,19 @@ public class tVm
             case DPRINT, DUMINUS, DTOS -> this.doubleStackInstruction(this.executionStack.pop(), instruction);
             case BPRINT, NOT, BTOS, JUMPT, JUMPF -> this.booleanStackInstruction(this.executionStack.pop(), instruction);
             case SPRINT -> {
-                if (this.executionStack.pop() instanceof String poppedString)
-                    System.out.println(poppedString);
+                if (this.executionStack.pop() instanceof String poppedString) {
+                    String escaped = getEscapedContent(poppedString);
+                    System.out.println(escaped);
+                }
                 else
                     this.throwTypeError(instruction, String.class);
             }
             default -> this.executeTwoOperandsInstruction(instruction);
         }
     }
-
+    private String getEscapedContent(String raw){
+        return raw.replaceAll("\\\\n", "\n").replaceAll("\\\\t","\t");
+    }
     private void intStackInstruction(Object popped, Instruction instruction)
     {
         if (popped instanceof Integer poppedInt)
@@ -312,6 +316,7 @@ public class tVm
         else
             this.throwTypeError(instruction, Boolean.class);
     }
+
 
     private void throwInsufficientStackError(Instruction instruction)
     {
