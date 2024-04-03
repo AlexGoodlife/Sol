@@ -26,8 +26,8 @@ public class tAssembler extends TasmBaseListener
 
     private TasmParser parser;
     private ArrayList<Instruction> instructions;
-    private List<Object> constantPool;
-    private HashMap<Object, Integer> constantPoolChecker;
+    private List<Value> constantPool;
+    private HashMap<Value, Integer> constantPoolChecker;
     private HashMap<String, InstructionCode> nameToCode;
     private HashMap<String, Integer> labelToInstruction;
     private ErrorReporter semanticErrorReporter;
@@ -54,13 +54,13 @@ public class tAssembler extends TasmBaseListener
         if(ctx.DOUBLE() == null && ctx.INT() == null)
             return;
 
-        Double readDouble = Double.valueOf(ctx.value.getText());
-        Integer index = this.constantPoolChecker.get(readDouble);
+        Value doubleValue = new Value(Double.valueOf(ctx.value.getText()));
+        Integer index = this.constantPoolChecker.get(doubleValue);
         if (index == null)
         {
-            this.constantPool.add(readDouble);
+            this.constantPool.add(doubleValue);
             index = this.constantPool.size() - 1;
-            this.constantPoolChecker.put(readDouble, index);
+            this.constantPoolChecker.put(doubleValue, index);
         }
         this.instructions.add(new Instruction(InstructionCode.DCONST, index));
     }
@@ -72,14 +72,15 @@ public class tAssembler extends TasmBaseListener
             return;
 
         String rawString = ctx.STRING().getText();
-        String readString = rawString.substring(1, rawString.length()-1).replaceAll("\\\\([\"\\\\])", "$1");
+        String readString = rawString.substring(1, rawString.length() - 1).replaceAll("\\\\([\"\\\\])", "$1");
+        Value stringValue = new Value(readString);
 
-        Integer index = this.constantPoolChecker.get(readString);
+        Integer index = this.constantPoolChecker.get(stringValue);
         if (index == null)
         {
-            this.constantPool.add(readString);
+            this.constantPool.add(stringValue);
             index = this.constantPool.size() - 1;
-            this.constantPoolChecker.put(readString, index);
+            this.constantPoolChecker.put(stringValue, index);
         }
         this.instructions.add(new Instruction(InstructionCode.SCONST, index));
     }
@@ -225,13 +226,13 @@ public class tAssembler extends TasmBaseListener
 
     private void writeConstantPool(DataOutputStream byteCodes) throws IOException
     {
-        for (Object o : this.constantPool)
-            if (o instanceof Double doubleValue)
+        for (Value value : this.constantPool)
+            if (value.getValue() instanceof Double doubleValue)
             {
                 byteCodes.writeByte(TypeCode.DOUBLE.ordinal());
                 byteCodes.writeDouble(doubleValue);
             }
-            else if (o instanceof String string)
+            else if (value.getValue() instanceof String string)
             {
                 byteCodes.writeByte(TypeCode.STRING.ordinal());
                 byte[] stringBytes = string.getBytes(StandardCharsets.UTF_8);

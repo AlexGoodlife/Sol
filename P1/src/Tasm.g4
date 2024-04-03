@@ -23,7 +23,6 @@ simpleInstruction:  SIMPLE_INSTRUCTION  //Will need hash map or a giant switch c
 //Language types
 INT: '-'?DIGIT+;
 DOUBLE: '-'?DIGIT+'.'DIGIT+;
-//STRING: '"'.*?'"';
 STRING: '"' ('\\"'|.)*? '"';
 //One argument instructions
 //Load instructions

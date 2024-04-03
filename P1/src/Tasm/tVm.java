@@ -21,9 +21,9 @@ public class tVm
     private DataInputStream byteCodes;
     private ArrayList<Instruction> instructions;
     private int instructionPointer;
-    private Stack<Object> executionStack;
-    private ArrayList<Object> constantPool;
-    private ArrayList<Object> globalMemory;
+    private Stack<Value> executionStack;
+    private ArrayList<Value> constantPool;
+    private ArrayList<Value> globalMemory;
 
     public tVm()
     {
@@ -91,12 +91,12 @@ public class tVm
         {
             int type = this.byteCodes.readByte();
             if (types[type] == TypeCode.DOUBLE)
-                this.constantPool.add(this.byteCodes.readDouble());
+                this.constantPool.add(new Value(this.byteCodes.readDouble()));
             else if (types[type] == TypeCode.STRING)
             {
                 int size = this.byteCodes.readInt();
                 byte[] stringBytes = this.byteCodes.readNBytes(size);
-                this.constantPool.add(new String(stringBytes));
+                this.constantPool.add(new Value(new String(stringBytes)));
             }
         }
     }
@@ -122,10 +122,10 @@ public class tVm
                 this.printTrace(currentInstruction);
             this.executeInstruction(currentInstruction);
         }
+
+        //If it reaches the end without halting it means no halt was encountered, throw error
         Instruction lastInstruction = this.instructions.get(this.instructionPointer - 1);
-        if(!lastInstruction.getInstruction().equals(InstructionCode.HALT)){
-            throwGenericError(lastInstruction, "Program terminated with a non halt instruction");
-        }
+        this.throwGenericError(lastInstruction, "Program terminated with a non halt instruction");
     }
 
     private void printTrace(Instruction currentInstruction)
@@ -145,9 +145,9 @@ public class tVm
     {
         switch (instruction.getInstruction())
         {
-            case ICONST -> this.executionStack.push(instruction.getOperand());
+            case ICONST -> this.executionStack.push(new Value(instruction.getOperand()));
             case DCONST, SCONST -> this.executionStack.push(this.constantPool.get(instruction.getOperand()));
-            case TCONST, FCONST -> this.executionStack.push(instruction.getInstruction() == InstructionCode.TCONST);
+            case TCONST, FCONST -> this.executionStack.push(new Value(instruction.getInstruction() == InstructionCode.TCONST));
             case JUMP -> this.instructionPointer = instruction.getOperand();
             case GALLOC -> IntStream.range(0, instruction.getOperand()).forEach(index -> this.globalMemory.add(null));
             case GLOAD -> this.executeGlobalMemoryAccessInstruction(instruction);
@@ -181,51 +181,54 @@ public class tVm
             case DPRINT, DUMINUS, DTOS -> this.doubleStackInstruction(this.executionStack.pop(), instruction);
             case BPRINT, NOT, BTOS, JUMPT, JUMPF -> this.booleanStackInstruction(this.executionStack.pop(), instruction);
             case SPRINT -> {
-                if (this.executionStack.pop() instanceof String poppedString)
-                    System.out.println(getEscapedContent(poppedString));
+                if (this.executionStack.pop().getValue() instanceof String poppedString)
+                    System.out.println(this.getEscapedContent(poppedString));
                 else
                     this.throwTypeError(instruction, String.class);
             }
             default -> this.executeTwoOperandsInstruction(instruction);
         }
     }
-    private String getEscapedContent(String raw){
+
+    private String getEscapedContent(String raw)
+    {
         return raw.replaceAll("\\\\n", "\n").replaceAll("\\\\t","\t");
     }
-    private void intStackInstruction(Object popped, Instruction instruction)
+
+    private void intStackInstruction(Value popped, Instruction instruction)
     {
-        if (popped instanceof Integer poppedInt)
+        if (popped.getValue() instanceof Integer poppedInt)
             switch (instruction.getInstruction())
             {
                 case IPRINT -> System.out.println(poppedInt);
-                case IUMINUS -> this.executionStack.push(-poppedInt);
-                case ITOD -> this.executionStack.push((double) poppedInt);
-                case ITOS -> this.executionStack.push(String.valueOf(poppedInt));
+                case IUMINUS -> this.executionStack.push(new Value(-poppedInt));
+                case ITOD -> this.executionStack.push(new Value((double) poppedInt));
+                case ITOS -> this.executionStack.push(new Value(String.valueOf(poppedInt)));
             }
         else
             this.throwTypeError(instruction, Integer.class);
     }
 
-    private void doubleStackInstruction(Object popped, Instruction instruction)
+    private void doubleStackInstruction(Value popped, Instruction instruction)
     {
-        if (popped instanceof Double poppedDouble)
+        if (popped.getValue() instanceof Double poppedDouble)
             switch (instruction.getInstruction())
             {
                 case DPRINT -> System.out.println(poppedDouble);
-                case DUMINUS -> this.executionStack.push(-poppedDouble);
-                case DTOS -> this.executionStack.push(String.valueOf(poppedDouble));
+                case DUMINUS -> this.executionStack.push(new Value(-poppedDouble));
+                case DTOS -> this.executionStack.push(new Value(String.valueOf(poppedDouble)));
             }
         else
             this.throwTypeError(instruction, Double.class);
     }
-    private void booleanStackInstruction(Object popped, Instruction instruction)
+    private void booleanStackInstruction(Value popped, Instruction instruction)
     {
-        if (popped instanceof Boolean poppedBoolean)
+        if (popped.getValue() instanceof Boolean poppedBoolean)
             switch (instruction.getInstruction())
             {
                 case BPRINT -> System.out.println(poppedBoolean);
-                case NOT -> this.executionStack.push(!poppedBoolean);
-                case BTOS -> this.executionStack.push(String.valueOf(poppedBoolean));
+                case NOT -> this.executionStack.push(new Value(!poppedBoolean));
+                case BTOS -> this.executionStack.push(new Value(String.valueOf(poppedBoolean)));
                 case JUMPT -> {
                     if (poppedBoolean)
                         this.instructionPointer = instruction.getOperand();
@@ -244,8 +247,8 @@ public class tVm
         if (this.executionStack.size() < 2)
             this.throwInsufficientStackError(instruction);
 
-        Object right = this.executionStack.pop();
-        Object left = this.executionStack.pop();
+        Value right = this.executionStack.pop();
+        Value left = this.executionStack.pop();
         switch (instruction.getInstruction())
         {
             case IADD, ISUB, IMULT, IDIV, IMOD, IEQ, INEQ, ILEQ, ILT -> this.intStackInstruction(left, right, instruction);
@@ -255,61 +258,59 @@ public class tVm
         }
     }
 
-    private void intStackInstruction(Object left, Object right, Instruction instruction)
+    private void intStackInstruction(Value left, Value right, Instruction instruction)
     {
-        if (right instanceof Integer rightInt && left instanceof Integer leftInt)
+        if (right.getValue() instanceof Integer rightInt && left.getValue() instanceof Integer leftInt)
             switch (instruction.getInstruction())
             {
-                case IADD -> this.executionStack.push(leftInt + rightInt );
-                case ISUB -> this.executionStack.push(leftInt - rightInt);
-                case IMULT -> this.executionStack.push(leftInt * rightInt);
+                case IADD -> this.executionStack.push(new Value(leftInt + rightInt));
+                case ISUB -> this.executionStack.push(new Value(leftInt - rightInt));
+                case IMULT -> this.executionStack.push(new Value(leftInt * rightInt));
                 case IDIV -> {
-                    if(rightInt == 0){
-                        throwGenericError(instruction, "Division by 0 error");
-                    }
-                    this.executionStack.push(leftInt / rightInt);
+                    if (rightInt == 0)
+                        this.throwGenericError(instruction, "Division by 0 error");
+                    this.executionStack.push(new Value(leftInt / rightInt));
                 }
-                case IMOD -> this.executionStack.push(leftInt % rightInt);
-                case IEQ -> this.executionStack.push(leftInt.equals(rightInt));
-                case INEQ -> this.executionStack.push(!leftInt.equals(rightInt));
-                case ILEQ -> this.executionStack.push(leftInt.compareTo(rightInt) <= 0 );
-                case ILT -> this.executionStack.push(leftInt.compareTo(rightInt) < 0 );
+                case IMOD -> this.executionStack.push(new Value(leftInt % rightInt));
+                case IEQ -> this.executionStack.push(new Value(leftInt.equals(rightInt)));
+                case INEQ -> this.executionStack.push(new Value(!leftInt.equals(rightInt)));
+                case ILEQ -> this.executionStack.push(new Value(leftInt.compareTo(rightInt) <= 0));
+                case ILT -> this.executionStack.push(new Value(leftInt.compareTo(rightInt) < 0));
             }
         else
             this.throwTypeError(instruction, Integer.class);
     }
 
-    private void doubleStackInstruction(Object left, Object right, Instruction instruction)
+    private void doubleStackInstruction(Value left, Value right, Instruction instruction)
     {
-        if (right instanceof Double rightDouble && left instanceof Double leftDouble)
+        if (right.getValue() instanceof Double rightDouble && left.getValue() instanceof Double leftDouble)
             switch (instruction.getInstruction())
             {
-                case DADD -> this.executionStack.push(leftDouble + rightDouble );
-                case DSUB -> this.executionStack.push(leftDouble - rightDouble);
-                case DMULT -> this.executionStack.push(leftDouble * rightDouble);
+                case DADD -> this.executionStack.push(new Value(leftDouble + rightDouble));
+                case DSUB -> this.executionStack.push(new Value(leftDouble - rightDouble));
+                case DMULT -> this.executionStack.push(new Value(leftDouble * rightDouble));
                 case DDIV -> {
-                    if(rightDouble == 0){
-                        throwGenericError(instruction, "Division by 0 error");
-                    }
-                    this.executionStack.push(leftDouble / rightDouble);
+                    if (rightDouble == 0)
+                        this.throwGenericError(instruction, "Division by 0 error");
+                    this.executionStack.push(new Value(leftDouble / rightDouble));
                 }
-                case DEQ -> this.executionStack.push(leftDouble.equals(rightDouble));
-                case DNEQ -> this.executionStack.push(!leftDouble.equals(rightDouble));
-                case DLEQ -> this.executionStack.push(leftDouble.compareTo(rightDouble) <= 0 );
-                case DLT -> this.executionStack.push(leftDouble.compareTo(rightDouble) < 0 );
+                case DEQ -> this.executionStack.push(new Value(leftDouble.equals(rightDouble)));
+                case DNEQ -> this.executionStack.push(new Value(!leftDouble.equals(rightDouble)));
+                case DLEQ -> this.executionStack.push(new Value(leftDouble.compareTo(rightDouble) <= 0));
+                case DLT -> this.executionStack.push(new Value(leftDouble.compareTo(rightDouble) < 0));
             }
         else
             this.throwTypeError(instruction, Double.class);
     }
 
-    private void stringStackInstruction(Object left, Object right, Instruction instruction)
+    private void stringStackInstruction(Value left, Value right, Instruction instruction)
     {
-        if (right instanceof String rightString && left instanceof String leftString)
+        if (right.getValue() instanceof String rightString && left.getValue() instanceof String leftString)
             switch (instruction.getInstruction())
             {
-                case SADD -> this.executionStack.push(leftString + rightString );
-                case SEQ -> this.executionStack.push(leftString.equals(rightString));
-                case SNEQ -> this.executionStack.push(!leftString.equals(rightString));
+                case SADD -> this.executionStack.push(new Value(leftString + rightString));
+                case SEQ -> this.executionStack.push(new Value(leftString.equals(rightString)));
+                case SNEQ -> this.executionStack.push(new Value(!leftString.equals(rightString)));
             }
         else
             this.throwTypeError(instruction, String.class);
@@ -320,15 +321,14 @@ public class tVm
         if (right instanceof Boolean rightBoolean && left instanceof Boolean leftBoolean)
             switch (instruction.getInstruction())
             {
-                case BEQ -> this.executionStack.push(leftBoolean == rightBoolean);
-                case BNEQ -> this.executionStack.push(leftBoolean != rightBoolean);
-                case AND -> this.executionStack.push(leftBoolean && rightBoolean);
-                case OR -> this.executionStack.push(leftBoolean || rightBoolean);
+                case BEQ -> this.executionStack.push(new Value(leftBoolean == rightBoolean));
+                case BNEQ -> this.executionStack.push(new Value(leftBoolean != rightBoolean));
+                case AND -> this.executionStack.push(new Value(leftBoolean && rightBoolean));
+                case OR -> this.executionStack.push(new Value(leftBoolean || rightBoolean));
             }
         else
             this.throwTypeError(instruction, Boolean.class);
     }
-
 
     private void throwInsufficientStackError(Instruction instruction)
     {
@@ -347,12 +347,14 @@ public class tVm
         System.err.println(message);
         System.exit(1);
     }
+
     private void throwGenericError(Instruction instruction, String errorMessage)
     {
         String message = this.instructionPointer + ":0 " + instruction + " "  + errorMessage;
         System.err.println(message);
         System.exit(1);
     }
+
     private void throwIndexOutOfBounds(Instruction instruction)
     {
         String message = this.instructionPointer + ":0 " +
