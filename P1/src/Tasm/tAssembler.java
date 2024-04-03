@@ -1,5 +1,9 @@
 package Tasm;
 
+import Tasm.types.Double64;
+import Tasm.types.Str;
+import Tasm.types.Type;
+import Tasm.types.TypeCode;
 import antlrTasm.*;
 import org.antlr.v4.runtime.*;
 import org.antlr.v4.runtime.tree.*;
@@ -26,8 +30,8 @@ public class tAssembler extends TasmBaseListener
 
     private TasmParser parser;
     private ArrayList<Instruction> instructions;
-    private List<Object> constantPool;
-    private HashMap<Object, Integer> constantPoolChecker;
+    private List<Type<?>> constantPool;
+    private HashMap<Type<?>, Integer> constantPoolChecker;
     private HashMap<String, InstructionCode> nameToCode;
     private HashMap<String, Integer> labelToInstruction;
     private ErrorReporter semanticErrorReporter;
@@ -54,7 +58,7 @@ public class tAssembler extends TasmBaseListener
         if(ctx.DOUBLE() == null && ctx.INT() == null)
             return;
 
-        Double readDouble = Double.valueOf(ctx.value.getText());
+        Double64 readDouble = new Double64(Double.valueOf(ctx.value.getText()));
         Integer index = this.constantPoolChecker.get(readDouble);
         if (index == null)
         {
@@ -72,7 +76,7 @@ public class tAssembler extends TasmBaseListener
             return;
 
         String rawString = ctx.STRING().getText();
-        String readString = rawString.substring(1, rawString.length()-1).replaceAll("\\\\([\"\\\\])", "$1");
+        Str readString = new Str(rawString.substring(1, rawString.length()-1).replaceAll("\\\\([\"\\\\])", "$1"));
 
         Integer index = this.constantPoolChecker.get(readString);
         if (index == null)
@@ -225,16 +229,16 @@ public class tAssembler extends TasmBaseListener
 
     private void writeConstantPool(DataOutputStream byteCodes) throws IOException
     {
-        for (Object o : this.constantPool)
-            if (o instanceof Double doubleValue)
+        for (Type<?> t : this.constantPool)
+            if (t.getTypeCode().equals(TypeCode.DOUBLE))
             {
                 byteCodes.writeByte(TypeCode.DOUBLE.ordinal());
-                byteCodes.writeDouble(doubleValue);
+                byteCodes.writeDouble((Double)t.getValue());
             }
-            else if (o instanceof String string)
+            else if (t.getTypeCode().equals(TypeCode.STRING))
             {
                 byteCodes.writeByte(TypeCode.STRING.ordinal());
-                byte[] stringBytes = string.getBytes(StandardCharsets.UTF_8);
+                byte[] stringBytes = ((String)t.getValue()).getBytes(StandardCharsets.UTF_8);
                 byteCodes.writeInt(stringBytes.length);
                 byteCodes.write(stringBytes);
             }
