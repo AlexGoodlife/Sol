@@ -139,7 +139,7 @@ public class tVm
         (
             "\t".repeat(7) +
             "Global Memory:\t" +
-            this.globalMemory.toString().replaceAll("null", "NIL")
+            this.globalMemory.toString()
         );
     }
 
@@ -151,7 +151,7 @@ public class tVm
             case DCONST, SCONST -> this.executionStack.push(this.constantPool.get(instruction.getOperand()));
             case TCONST, FCONST -> this.executionStack.push(new Bool(instruction.getInstruction() == InstructionCode.TCONST));
             case JUMP -> this.instructionPointer = instruction.getOperand();
-            case GALLOC -> IntStream.range(0, instruction.getOperand()).forEach(index -> this.globalMemory.add(null));
+            case GALLOC -> IntStream.range(0, instruction.getOperand()).forEach(index -> this.globalMemory.add(new Nil()));
             case GLOAD -> this.executeGlobalMemoryAccessInstruction(instruction);
             case HALT -> System.exit(0);
             default -> this.executeStackInstruction(instruction);
