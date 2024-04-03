@@ -9,7 +9,7 @@ public class Value
     public Value(Object value)
     {
         if (this.isInvalidType(value))
-            System.exit(1);
+            this.throwInvalidTypeError();
         this.value = value;
     }
 
@@ -23,6 +23,12 @@ public class Value
                 break;
             }
         return result;
+    }
+
+    private void throwInvalidTypeError()
+    {
+        System.err.println("Invalid type");
+        System.exit(1);
     }
 
     public Object getValue()
