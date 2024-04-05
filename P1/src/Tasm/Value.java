@@ -39,7 +39,7 @@ public class Value
     @Override
     public String toString()
     {
-        return this.value == null ? "NIL" : this.value.toString();
+        return this.value.toString();
     }
 
     @Override
