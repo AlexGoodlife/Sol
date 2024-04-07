@@ -13,7 +13,9 @@ public class tAssembler extends TasmBaseListener
     private static final int MAX_ARGUMENTS_SIZE = 5;
 
     private static final String SOURCE_FILE_FLAG = "-i";
+    private static final String SOURCE_FILE_EXTENSION = "tasm";
     private static final String BYTECODES_FILE_FLAG = "-o";
+    public static final String BYTECODES_FILE_EXTENSION = "tbc";
     private static final String SHOW_ASSEMBLY_FLAG = "--asm";
 
     private static final String DEFAULT_SOURCE_FILE_NAME = null;
@@ -122,13 +124,13 @@ public class tAssembler extends TasmBaseListener
         if (this.successfulAssemble())
             this.writeByteCodes();
         else
-            this.throwUnsuccessfulAssemble();
+            this.unsuccessfulAssemble();
     }
 
     private void parseArguments(String[] args)
     {
         if (args.length > MAX_ARGUMENTS_SIZE)
-            throw new IllegalArgumentException("Invalid arguments");
+            RuntimeError.dispatchError("Invalid arguments size of " + args.length);
 
         for (int i = 0; i < args.length; i++)
             switch (args[i])
@@ -145,8 +147,26 @@ public class tAssembler extends TasmBaseListener
                     this.showAssembly = true;
                     break;
                 default:
-                    throw new IllegalArgumentException("Invalid flag");
+                    RuntimeError.dispatchError("Invalid flag '" + args[i] + "'");
             }
+
+        this.checkFile();
+    }
+
+    private void checkFile()
+    {
+        if (this.sourceFileName != null)
+        {
+            String[] splitSourceFileName = this.sourceFileName.split("\\.");
+            String sourceFileExtension = splitSourceFileName[splitSourceFileName.length - 1];
+            if (!sourceFileExtension.equals(SOURCE_FILE_EXTENSION))
+                RuntimeError.dispatchError("Invalid source file extension '." + sourceFileExtension + "'");
+        }
+
+        String[] splitByteCodesFileName = this.byteCodesFileName.split("\\.");
+        String byteCodesFileExtension = splitByteCodesFileName[splitByteCodesFileName.length - 1];
+        if (!byteCodesFileExtension.equals(BYTECODES_FILE_EXTENSION))
+            RuntimeError.dispatchError("Invalid bytecode file extension '." + byteCodesFileExtension + "'");
     }
 
     private void initCompiler() throws IOException
@@ -188,7 +208,7 @@ public class tAssembler extends TasmBaseListener
         return !this.semanticErrorReporter.hasReportedErrors() && !(this.parser.getNumberOfSyntaxErrors() > 0);
     }
 
-    private void throwUnsuccessfulAssemble()
+    private void unsuccessfulAssemble()
     {
         //ANTLR should print all the syntax errors prior, if any
         System.err.println(this.semanticErrorReporter);
@@ -200,8 +220,7 @@ public class tAssembler extends TasmBaseListener
         String message = "Program assembled unsuccessfully with " + syntaxErrorCount + syntaxErrors +
                 "and " + semanticErrorCount + semanticErrors;
 
-        System.err.println(message);
-        System.exit(1);
+        RuntimeError.dispatchError(message);
     }
 
     private void writeByteCodes() throws IOException
@@ -251,9 +270,10 @@ public class tAssembler extends TasmBaseListener
         System.out.println(this.constantPool);
     }
 
-    public static void main(String[] args) throws IOException
+    public static void main(String[] args)
     {
         tAssembler assembler = new tAssembler();
-        assembler.assemble(args);
+        try { assembler.assemble(args); }
+        catch (IOException e) { RuntimeError.dispatchError(e.getMessage()); }
     }
 }
