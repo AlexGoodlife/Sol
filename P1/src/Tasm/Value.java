@@ -1,5 +1,7 @@
 package Tasm;
 
+import java.util.Objects;
+
 public class Value
 {
     private static final Class<?>[] SUPPORTED_TYPES = {Integer.class, Double.class, String.class, Boolean.class};
@@ -9,12 +11,15 @@ public class Value
     public Value(Object value)
     {
         if (this.isInvalidType(value))
-            this.throwInvalidTypeError();
+            this.invalidTypeError(value.getClass());
         this.value = value;
     }
 
     private boolean isInvalidType(Object value)
     {
+        if (value == null)
+            return false;
+
         boolean result = true;
         for (Class<?> c : SUPPORTED_TYPES)
             if (c.isInstance(value))
@@ -25,10 +30,9 @@ public class Value
         return result;
     }
 
-    private void throwInvalidTypeError()
+    private void invalidTypeError(Class<?> c)
     {
-        System.err.println("Invalid type");
-        System.exit(1);
+        RuntimeError.dispatchError("Invalid type " + c.getSimpleName());
     }
 
     public Object getValue()
@@ -39,7 +43,7 @@ public class Value
     @Override
     public String toString()
     {
-        return this.value.toString();
+        return this.value == null ? "NIL" : this.value.toString();
     }
 
     @Override
@@ -50,12 +54,12 @@ public class Value
         if (!(that instanceof Value thatValue))
             return false;
 
-        return this.value.equals(thatValue.value);
+        return Objects.equals(this.value, thatValue.value);
     }
 
     @Override
     public int hashCode()
     {
-        return this.value.hashCode();
+        return Objects.hashCode(this.value);
     }
 }

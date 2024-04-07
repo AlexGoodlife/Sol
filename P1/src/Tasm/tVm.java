@@ -146,12 +146,7 @@ public class tVm
         String s = currentInstruction.toString();
         String opStr = s + " ".repeat(Math.max(0, 20 - s.length()));
         System.out.println("\n" + (this.instructionPointer - 1) + ":" + "\t" + opStr + "\tStack:\t" + this.executionStack);
-        System.out.println
-        (
-            "\t".repeat(7) +
-            "Global Memory:\t" +
-            this.globalMemory.toString().replaceAll("null", "NIL")
-        );
+        System.out.println("\t".repeat(7) + "Global Memory:\t" + this.globalMemory);
     }
 
     private void executeInstruction(Instruction instruction)
@@ -162,7 +157,7 @@ public class tVm
             case DCONST, SCONST -> this.executionStack.push(this.constantPool.get(instruction.getOperand()));
             case TCONST, FCONST -> this.executionStack.push(new Value(instruction.getInstruction() == InstructionCode.TCONST));
             case JUMP -> this.instructionPointer = instruction.getOperand();
-            case GALLOC -> IntStream.range(0, instruction.getOperand()).forEach(index -> this.globalMemory.add(null));
+            case GALLOC -> IntStream.range(0, instruction.getOperand()).forEach(index -> this.globalMemory.add(new Value(null)));
             case GLOAD -> this.executeGlobalMemoryAccessInstruction(instruction);
             case HALT -> System.exit(0);
             default -> this.executeStackInstruction(instruction);
