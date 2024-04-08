@@ -157,7 +157,11 @@ public class tVm
             case DCONST, SCONST -> this.executionStack.push(this.constantPool.get(instruction.getOperand()));
             case TCONST, FCONST -> this.executionStack.push(new Value(instruction.getInstruction() == InstructionCode.TCONST));
             case JUMP -> this.instructionPointer = instruction.getOperand();
-            case GALLOC -> IntStream.range(0, instruction.getOperand()).forEach(index -> this.globalMemory.add(new Value(null)));
+            case GALLOC -> {
+                if (instruction.getOperand() < 0)
+                    this.genericError(instruction, "Can't allocate negative quantity of memory");
+                IntStream.range(0, instruction.getOperand()).forEach(index -> this.globalMemory.add(new Value(null)));
+            }
             case GLOAD -> this.executeGlobalMemoryAccessInstruction(instruction);
             case HALT -> System.exit(0);
             default -> this.executeStackInstruction(instruction);
