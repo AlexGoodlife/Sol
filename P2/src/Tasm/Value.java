@@ -1,5 +1,6 @@
 package Tasm;
 
+import ErrorUtils.RuntimeError;
 import java.util.Objects;
 
 public class Value

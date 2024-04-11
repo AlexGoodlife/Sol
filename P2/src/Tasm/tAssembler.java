@@ -1,5 +1,6 @@
 package Tasm;
 
+import ErrorUtils.*;
 import antlrTasm.*;
 import org.antlr.v4.runtime.*;
 import org.antlr.v4.runtime.tree.*;
@@ -119,7 +120,7 @@ public class tAssembler extends TasmBaseListener
     public void assemble(String[] args) throws IOException
     {
         this.parseArguments(args);
-        this.initCompiler();
+        this.initAssembler();
         this.assembleInstructions();
         if (this.successfulAssemble())
             this.writeByteCodes();
@@ -169,7 +170,7 @@ public class tAssembler extends TasmBaseListener
             RuntimeError.dispatchError("Invalid bytecode file extension '." + byteCodesFileExtension + "'");
     }
 
-    private void initCompiler() throws IOException
+    private void initAssembler() throws IOException
     {
         this.parser = this.generateParser();
         this.instructions = new ArrayList<>();

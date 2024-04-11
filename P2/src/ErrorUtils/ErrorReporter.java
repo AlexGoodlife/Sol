@@ -1,4 +1,4 @@
-package Tasm;
+package ErrorUtils;
 
 import org.antlr.v4.runtime.CharStream;
 import org.antlr.v4.runtime.ParserRuleContext;

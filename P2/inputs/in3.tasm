@@ -1,4 +1,0 @@
-iconst 3
-dconst 3
-dadd
-halt

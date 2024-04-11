@@ -1,8 +1,0 @@
-iconst 2
-iprint
-jump skip
-halt
-skip: iconst 3
-sconst "Hello"
-sprint
-iprint

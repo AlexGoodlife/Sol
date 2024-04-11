@@ -1,5 +1,0 @@
-iconst 4
-iconst 2
-ileq
-bprint
-halt

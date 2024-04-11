@@ -1,4 +1,4 @@
-package Tasm;
+package ErrorUtils;
 
 public class RuntimeError
 {
