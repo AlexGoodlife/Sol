@@ -1,0 +1,6 @@
+galloc 3
+iconst 2
+iadd
+iconst 0
+idiv
+halt

@@ -1,0 +1,9 @@
+                        iconst 1.2
+                        dconst "Hello"
+                        sconst 1
+                        galloc 2.5
+                        jump 2
+
+_duplicatedLabel:       icont 1
+_duplicatedLabel:       jump _nonExistingLabel
+
