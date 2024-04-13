@@ -341,7 +341,7 @@ public class solCompiler extends SolBaseVisitor<Void>
         int syntaxErrorCount = this.parser.getNumberOfSyntaxErrors();
         String syntaxErrors = syntaxErrorCount == 1 ? " syntax error " : " syntax errors ";
         String semanticErrors = semanticErrorCount == 1 ? " semantic error" : " semantic errors";
-        String message = "Program assembled unsuccessfully with " + syntaxErrorCount + syntaxErrors +
+        String message = "Program compiled unsuccessfully with " + syntaxErrorCount + syntaxErrors +
                 "and " + semanticErrorCount + semanticErrors;
 
         RuntimeError.dispatchError(message);
