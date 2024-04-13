@@ -399,7 +399,7 @@ public class solCompiler extends SolBaseVisitor<Void>
         System.out.println(this.constantPool);
     }
 
-    public static void main(String[] args) throws IOException
+    public static void main(String[] args)
     {
         solCompiler compiler = new solCompiler();
         try { compiler.compile(args); }
