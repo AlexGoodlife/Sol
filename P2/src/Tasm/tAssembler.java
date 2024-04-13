@@ -14,9 +14,8 @@ public class tAssembler extends TasmBaseListener
     private static final int MAX_ARGUMENTS_SIZE = 5;
 
     private static final String SOURCE_FILE_FLAG = "-i";
-    private static final String SOURCE_FILE_EXTENSION = "tasm";
+    public static final String SOURCE_FILE_EXTENSION = "tasm";
     private static final String BYTECODES_FILE_FLAG = "-o";
-    public static final String BYTECODES_FILE_EXTENSION = "tbc";
     private static final String SHOW_ASSEMBLY_FLAG = "--asm";
 
     private static final String DEFAULT_SOURCE_FILE_NAME = null;
@@ -29,8 +28,7 @@ public class tAssembler extends TasmBaseListener
 
     private TasmParser parser;
     private ArrayList<Instruction> instructions;
-    private List<Value> constantPool;
-    private HashMap<Value, Integer> constantPoolChecker;
+    private ConstantPool constantPool;
     private HashMap<String, InstructionCode> nameToCode;
     private HashMap<String, Integer> labelToInstruction;
     private ErrorReporter semanticErrorReporter;
@@ -58,14 +56,7 @@ public class tAssembler extends TasmBaseListener
             return;
 
         Value doubleValue = new Value(Double.valueOf(ctx.value.getText()));
-        Integer index = this.constantPoolChecker.get(doubleValue);
-        if (index == null)
-        {
-            this.constantPool.add(doubleValue);
-            index = this.constantPool.size() - 1;
-            this.constantPoolChecker.put(doubleValue, index);
-        }
-        this.instructions.add(new Instruction(InstructionCode.DCONST, index));
+        this.instructions.add(new Instruction(InstructionCode.DCONST, this.constantPool.addIfAbsent(doubleValue)));
     }
 
     @Override
@@ -77,15 +68,7 @@ public class tAssembler extends TasmBaseListener
         String rawString = ctx.STRING().getText();
         String readString = rawString.substring(1, rawString.length() - 1).replaceAll("\\\\([\"\\\\])", "$1");
         Value stringValue = new Value(readString);
-
-        Integer index = this.constantPoolChecker.get(stringValue);
-        if (index == null)
-        {
-            this.constantPool.add(stringValue);
-            index = this.constantPool.size() - 1;
-            this.constantPoolChecker.put(stringValue, index);
-        }
-        this.instructions.add(new Instruction(InstructionCode.SCONST, index));
+        this.instructions.add(new Instruction(InstructionCode.SCONST, this.constantPool.addIfAbsent(stringValue)));
     }
 
     @Override
@@ -125,7 +108,7 @@ public class tAssembler extends TasmBaseListener
         if (this.successfulAssemble())
             this.writeByteCodes();
         else
-            this.unsuccessfulAssemble();
+            this.unsuccessfulAssembleError();
     }
 
     private void parseArguments(String[] args)
@@ -151,10 +134,10 @@ public class tAssembler extends TasmBaseListener
                     RuntimeError.dispatchError("Invalid flag '" + args[i] + "'");
             }
 
-        this.checkFile();
+        this.checkFiles();
     }
 
-    private void checkFile()
+    private void checkFiles()
     {
         if (this.sourceFileName != null)
         {
@@ -166,7 +149,7 @@ public class tAssembler extends TasmBaseListener
 
         String[] splitByteCodesFileName = this.byteCodesFileName.split("\\.");
         String byteCodesFileExtension = splitByteCodesFileName[splitByteCodesFileName.length - 1];
-        if (!byteCodesFileExtension.equals(BYTECODES_FILE_EXTENSION))
+        if (!byteCodesFileExtension.equals(tVm.BYTECODES_FILE_EXTENSION))
             RuntimeError.dispatchError("Invalid bytecode file extension '." + byteCodesFileExtension + "'");
     }
 
@@ -174,8 +157,7 @@ public class tAssembler extends TasmBaseListener
     {
         this.parser = this.generateParser();
         this.instructions = new ArrayList<>();
-        this.constantPool = new ArrayList<>();
-        this.constantPoolChecker = new HashMap<>();
+        this.constantPool = new ConstantPool();
         this.nameToCode = new HashMap<>();
         Arrays.stream(InstructionCode.values()).forEach((code) -> this.nameToCode.put(code.name().toLowerCase(), code));
         this.semanticErrorReporter = new ErrorReporter();
@@ -209,7 +191,7 @@ public class tAssembler extends TasmBaseListener
         return !this.semanticErrorReporter.hasReportedErrors() && !(this.parser.getNumberOfSyntaxErrors() > 0);
     }
 
-    private void unsuccessfulAssemble()
+    private void unsuccessfulAssembleError()
     {
         //ANTLR should print all the syntax errors prior, if any
         System.err.println(this.semanticErrorReporter);

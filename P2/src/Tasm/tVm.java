@@ -11,6 +11,7 @@ public class tVm
     public static final int MAX_ARGUMENTS_SIZE = 3;
 
     private static final String BYTECODES_FILE_FLAG = "-b";
+    public static final String BYTECODES_FILE_EXTENSION = "tbc";
     private static final String TRACE_FLAG = "--trace";
 
     private static final String DEFAULT_BYTECODES_FILE_NAME = null;
@@ -65,7 +66,7 @@ public class tVm
 
         String[] splitByteCodesFileName = this.byteCodesFileName.split("\\.");
         String byteCodesFileExtension = splitByteCodesFileName[splitByteCodesFileName.length - 1];
-        if (!byteCodesFileExtension.equals(tAssembler.BYTECODES_FILE_EXTENSION))
+        if (!byteCodesFileExtension.equals(BYTECODES_FILE_EXTENSION))
             RuntimeError.dispatchError("Invalid bytecode file extension '." + byteCodesFileExtension + "'");
     }
 
@@ -329,9 +330,9 @@ public class tVm
             this.typeError(instruction, String.class);
     }
 
-    private void booleanStackInstruction(Object left, Object right, Instruction instruction)
+    private void booleanStackInstruction(Value left, Value right, Instruction instruction)
     {
-        if (right instanceof Boolean rightBoolean && left instanceof Boolean leftBoolean)
+        if (right.getValue() instanceof Boolean rightBoolean && left.getValue()  instanceof Boolean leftBoolean)
             switch (instruction.getInstruction())
             {
                 case BEQ -> this.executionStack.push(new Value(leftBoolean == rightBoolean));

@@ -2,10 +2,7 @@ package Sol;
 
 import ErrorUtils.ErrorReporter;
 import antlrSol.*;
-import org.antlr.v4.runtime.*;
 import org.antlr.v4.runtime.tree.*;
-
-import java.io.*;
 
 public class solTypeAnnotator extends SolBaseListener
 {
@@ -113,15 +110,15 @@ public class solTypeAnnotator extends SolBaseListener
     public void exitAddSub(SolParser.AddSubContext ctx)
     {
         if (ctx.op.getText().equals("+"))
-            this.exitAdd(ctx, ctx.expr(0), ctx.expr(1));
+            this.exitAdd(ctx);
         else
             this.exitArithmetic(ctx, ctx.expr(0), ctx.expr(1));
     }
 
-    private void exitAdd(SolParser.AddSubContext ctx, SolParser.ExprContext left, SolParser.ExprContext right)
+    private void exitAdd(SolParser.AddSubContext ctx)
     {
-        Class<?> leftType = this.annotatedTypes.get(left);
-        Class<?> rightType = this.annotatedTypes.get(right);
+        Class<?> leftType = this.annotatedTypes.get(ctx.expr(0));
+        Class<?> rightType = this.annotatedTypes.get(ctx.expr(1));
         if (leftType == null || rightType == null)
             return;
 
@@ -130,12 +127,12 @@ public class solTypeAnnotator extends SolBaseListener
         boolean isLeftNumber = leftType == Integer.class || leftType == Double.class;
         boolean isRightNumber = rightType == Integer.class || rightType == Double.class;
         if ((isLeftString || isRightString) || (isLeftNumber && isRightNumber))
-            this.determineAddType(ctx, leftType, rightType);
+            this.annotateAddType(ctx, leftType, rightType);
         else
             this.reporter.reportError(ctx, ERROR_MESSAGE);
     }
 
-    private void determineAddType(SolParser.AddSubContext ctx, Class<?> leftType, Class<?> rightType)
+    private void annotateAddType(SolParser.AddSubContext ctx, Class<?> leftType, Class<?> rightType)
     {
         boolean isLeftString = leftType == String.class;
         boolean isRightString = rightType == String.class;
@@ -159,12 +156,12 @@ public class solTypeAnnotator extends SolBaseListener
         boolean isLeftNumber = leftType == Integer.class || leftType == Double.class;
         boolean isRightNumber = rightType == Integer.class || rightType == Double.class;
         if (isLeftNumber && isRightNumber)
-            this.determineArithmeticType(ctx, leftType, rightType);
+            this.annotateArithmeticType(ctx, leftType, rightType);
         else
             this.reporter.reportError(ctx, ERROR_MESSAGE);
     }
 
-    private void determineArithmeticType(SolParser.ExprContext ctx, Class<?> leftType, Class<?> rightType)
+    private void annotateArithmeticType(SolParser.ExprContext ctx, Class<?> leftType, Class<?> rightType)
     {
         boolean isLeftDouble = leftType == Double.class;
         boolean isRightDouble = rightType == Double.class;
@@ -180,13 +177,13 @@ public class solTypeAnnotator extends SolBaseListener
         if (ctx.op.getText().matches("[*/]"))
             this.exitArithmetic(ctx, ctx.expr(0), ctx.expr(1));
         else if (ctx.op.getText().equals("%"))
-            this.exitMod(ctx, ctx.expr(0), ctx.expr(1));
+            this.exitMod(ctx);
     }
 
-    private void exitMod(SolParser.MultDivModContext ctx, SolParser.ExprContext left, SolParser.ExprContext right)
+    private void exitMod(SolParser.MultDivModContext ctx)
     {
-        Class<?> leftType = this.annotatedTypes.get(left);
-        Class<?> rightType = this.annotatedTypes.get(right);
+        Class<?> leftType = this.annotatedTypes.get(ctx.expr(0));
+        Class<?> rightType = this.annotatedTypes.get(ctx.expr(1));
         if (leftType == null || rightType == null)
             return;
 
@@ -202,14 +199,14 @@ public class solTypeAnnotator extends SolBaseListener
     public void exitNegation(SolParser.NegationContext ctx)
     {
         if (ctx.op.getText().equals("-"))
-            this.exitNumberNegation(ctx, ctx.expr());
+            this.exitNumberNegation(ctx);
         else
-            this.exitNot(ctx, ctx.expr());
+            this.exitNot(ctx);
     }
 
-    private void exitNumberNegation(SolParser.NegationContext ctx, SolParser.ExprContext exprContext)
+    private void exitNumberNegation(SolParser.NegationContext ctx)
     {
-        Class<?> exprType = this.annotatedTypes.get(exprContext);
+        Class<?> exprType = this.annotatedTypes.get(ctx.expr());
         if (exprType == null)
             return;
 
@@ -220,9 +217,9 @@ public class solTypeAnnotator extends SolBaseListener
             this.reporter.reportError(ctx, ERROR_MESSAGE);
     }
 
-    private void exitNot(SolParser.NegationContext ctx, SolParser.ExprContext exprContext)
+    private void exitNot(SolParser.NegationContext ctx)
     {
-        Class<?> exprType = this.annotatedTypes.get(exprContext);
+        Class<?> exprType = this.annotatedTypes.get(ctx.expr());
         if (exprType == null)
             return;
 
@@ -242,22 +239,5 @@ public class solTypeAnnotator extends SolBaseListener
     {
         ParseTreeWalker walker = new ParseTreeWalker();
         walker.walk(this, tree);
-    }
-
-    // TODO: 11/04/2024 Delete this main function later
-    public static void main(String[] args) throws IOException
-    {
-        InputStream inputStream = System.in;
-        CharStream input = CharStreams.fromStream(inputStream);
-        SolLexer lexer = new SolLexer(input);
-        CommonTokenStream tokens = new CommonTokenStream(lexer);
-        SolParser parser = new SolParser(tokens);
-        ParseTree tree = parser.program();
-
-        ErrorReporter reporter = new ErrorReporter();
-        solTypeAnnotator typeAnnotator = new solTypeAnnotator(reporter);
-        typeAnnotator.annotateTypes(tree);
-
-        System.err.println(reporter);
     }
 }
