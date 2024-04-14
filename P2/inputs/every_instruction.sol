@@ -123,7 +123,7 @@ print "7.27 <= 7 =";
 print 7.27 <= 7;
 
 print "7.27 >= 6 =";
-print 7.27 <= 6;
+print 7.27 >= 6;
 
 print "0.5 == 0";
 print 0.5 == 0;

@@ -6,6 +6,8 @@ import java.util.Iterator;
 
 public class ConstantPool implements Iterable<Value>
 {
+    public final static int CONSTANT_POOL_DELIMITER = InstructionCode.values().length;
+
     private final ArrayList<Value> constantPool;
     private final HashMap<Value, Integer> constantPoolChecker;
 
@@ -13,11 +15,6 @@ public class ConstantPool implements Iterable<Value>
     {
         this.constantPool = new ArrayList<>();
         this.constantPoolChecker = new HashMap<>();
-    }
-
-    public ArrayList<Value> getConstantPool()
-    {
-        return this.constantPool;
     }
 
     public int addIfAbsent(Value v)

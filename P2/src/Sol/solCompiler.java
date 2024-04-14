@@ -12,7 +12,7 @@ import java.util.ArrayList;
 
 /* Why use a visitor? Because we want to know if we need to insert conversion instructions prior to visiting any upcoming nodes in an expression.
 * With a listener this would be much harder to do in a clean manner,
-* as we would need to check the type of the parent node in the child node for type conversion instructions */
+* as we would need to check the type of the parent node and its other child nodes in the child node for type conversion instructions */
 public class solCompiler extends SolBaseVisitor<Void>
 {
     private static final int MAX_ARGUMENTS_SIZE = 5;
@@ -99,6 +99,8 @@ public class solCompiler extends SolBaseVisitor<Void>
         return null;
     }
 
+    /* A return value of null in this function signifies something is very wrong with the implementation.
+    * As such we throw an InternalError if such ever occurs */
     private Class<?> visitNodesWithTypeConversionChecking(SolParser.ExprContext leftNode, SolParser.ExprContext rightNode)
     {
         Class<?> leftType = this.annotatedTypes.get(leftNode);
@@ -106,13 +108,16 @@ public class solCompiler extends SolBaseVisitor<Void>
         Class<?> type = leftType == rightType ? leftType : null;
 
         this.visit(leftNode);
-        type = this.addConversionIfNeeded(leftType, rightType) ? rightType : type;
+        type = this.addConversionIfPossible(leftType, rightType) ? rightType : type;
         this.visit(rightNode);
-        type = this.addConversionIfNeeded(rightType, leftType) ? leftType : type;
+        type = this.addConversionIfPossible(rightType, leftType) ? leftType : type;
+
+        if (type == null)
+            throw new InternalError("Return type value is null");
         return type;
     }
 
-    private boolean addConversionIfNeeded(Class<?> from, Class<?> to)
+    private boolean addConversionIfPossible(Class<?> from, Class<?> to)
     {
         if (from == to)
             return false;
@@ -136,7 +141,7 @@ public class solCompiler extends SolBaseVisitor<Void>
     {
         Class<?> type = this.visitNodesWithTypeConversionChecking(ctx.expr(0), ctx.expr(1));
 
-        InstructionCode code = null;
+        InstructionCode code;
         if (type == Integer.class)
             code = ctx.op.getText().equals("==") ? InstructionCode.IEQ : InstructionCode.INEQ;
         else if (type == Double.class)
@@ -145,6 +150,8 @@ public class solCompiler extends SolBaseVisitor<Void>
             code = ctx.op.getText().equals("==") ? InstructionCode.SEQ : InstructionCode.SNEQ;
         else if (type == Boolean.class)
             code = ctx.op.getText().equals("==") ? InstructionCode.BEQ : InstructionCode.BNEQ;
+        else
+            throw new InternalError("Invalid type caused instruction code to be null");
 
         this.instructions.add(new Instruction(code));
         return null;
@@ -155,11 +162,13 @@ public class solCompiler extends SolBaseVisitor<Void>
     {
         Class<?> type = this.visitNodesWithTypeConversionChecking(ctx.expr(0), ctx.expr(1));
 
-        InstructionCode code = null;
+        InstructionCode code;
         if (type == Integer.class)
             code = ctx.op.getText().matches("<|>=") ? InstructionCode.ILT : InstructionCode.ILEQ;
         else if (type == Double.class)
             code = ctx.op.getText().matches("<|>=") ? InstructionCode.DLT : InstructionCode.DLEQ;
+        else
+            throw new InternalError("Invalid type caused instruction code to be null");
 
         this.instructions.add(new Instruction(code));
         if (ctx.op.getText().matches(">|>="))
@@ -173,13 +182,15 @@ public class solCompiler extends SolBaseVisitor<Void>
     {
         Class<?> type = this.visitNodesWithTypeConversionChecking(ctx.expr(0), ctx.expr(1));
 
-        InstructionCode code = null;
+        InstructionCode code;
         if (type == Integer.class)
             code = ctx.op.getText().equals("+") ? InstructionCode.IADD : InstructionCode.ISUB;
         else if (type == Double.class)
             code = ctx.op.getText().equals("+") ? InstructionCode.DADD : InstructionCode.DSUB;
         else if (type == String.class && ctx.op.getText().equals("+"))
             code = InstructionCode.SADD;
+        else
+            throw new InternalError("Invalid type caused instruction code to be null");
 
         this.instructions.add(new Instruction(code));
 
@@ -191,13 +202,15 @@ public class solCompiler extends SolBaseVisitor<Void>
     {
         Class<?> type = this.visitNodesWithTypeConversionChecking(ctx.expr(0), ctx.expr(1));
 
-        InstructionCode code = null;
+        InstructionCode code;
         if (type == Integer.class && ctx.op.getText().equals("%"))
             code = InstructionCode.IMOD;
         else if (type == Integer.class)
             code = ctx.op.getText().equals("*") ? InstructionCode.IMULT : InstructionCode.IDIV;
         else if (type == Double.class)
             code = ctx.op.getText().equals("*") ? InstructionCode.DMULT : InstructionCode.DDIV;
+        else
+            throw new InternalError("Invalid type caused instruction code to be null");
 
         this.instructions.add(new Instruction(code));
 
@@ -370,7 +383,7 @@ public class solCompiler extends SolBaseVisitor<Void>
             if (instruction.getOperand() != null)
                 byteCodes.writeInt(instruction.getOperand());
         }
-        byteCodes.writeByte(InstructionCode.END.ordinal());
+        byteCodes.writeByte(ConstantPool.CONSTANT_POOL_DELIMITER);
     }
 
     private void writeConstantPool(DataOutputStream byteCodes) throws IOException

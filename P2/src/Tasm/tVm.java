@@ -92,11 +92,15 @@ public class tVm
     {
         InstructionCode code;
         InstructionCode[] codes = InstructionCode.values();
-        while ((code = codes[this.byteCodes.readByte()]) != InstructionCode.END)
+        byte readByte;
+        while ((readByte = this.byteCodes.readByte()) != ConstantPool.CONSTANT_POOL_DELIMITER)
+        {
+            code = codes[readByte];
             if (code.ordinal() <= InstructionCode.GLOAD.ordinal())
                 this.instructions.add(new Instruction(code, this.byteCodes.readInt()));
             else
                 this.instructions.add(new Instruction(code));
+        }
     }
 
     private void readConstantPool() throws IOException

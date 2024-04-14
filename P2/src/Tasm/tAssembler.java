@@ -223,7 +223,7 @@ public class tAssembler extends TasmBaseListener
             if (instruction.getOperand() != null)
                 byteCodes.writeInt(instruction.getOperand());
         }
-        byteCodes.writeByte(InstructionCode.END.ordinal());
+        byteCodes.writeByte(ConstantPool.CONSTANT_POOL_DELIMITER);
     }
 
     private void writeConstantPool(DataOutputStream byteCodes) throws IOException

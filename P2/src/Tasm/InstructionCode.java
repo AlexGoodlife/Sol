@@ -47,6 +47,5 @@ public enum InstructionCode {
     OR,
     NOT,
     BTOS,
-    HALT,
-    END
+    HALT
 }
