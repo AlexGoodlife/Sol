@@ -207,6 +207,7 @@ public class solCompiler extends SolBaseVisitor<Void>
     @Override
     public Void visitNegation(SolParser.NegationContext ctx)
     {
+        this.visit(ctx.expr());
         Class<?> exprType = this.annotatedTypes.get(ctx.expr());
 
         if (exprType == Integer.class)

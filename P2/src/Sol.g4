@@ -21,8 +21,8 @@ expr:   LPAREN expr RPAREN                  #Parentheses
         ;
 
 //Language types
-INT: '-'?DIGIT+;
-DOUBLE: '-'?DIGIT+'.'DIGIT+;
+INT: DIGIT+;
+DOUBLE: DIGIT+'.'DIGIT+;
 STRING: '"' ('\\"'|.)*? '"';
 BOOLEAN: 'true' | 'false';
 
