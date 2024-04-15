@@ -28,7 +28,7 @@ print "7 <= 7 =";
 print 7 <= 7;
 
 print "7 >= 6 =";
-print 7 <= 6;
+print 7 >= 6;
 
 print "0 == 0";
 print 0 == 0;
@@ -63,7 +63,7 @@ print "7.27 <= 7.27 =";
 print 7.27 <= 7.27;
 
 print "7.27 >= 6.66 =";
-print 7.27 <= 6.66;
+print 7.27 >= 6.66;
 
 print "0.5 == 0.0";
 print 0.5 == 0.0;

@@ -101,16 +101,16 @@ public class solCompiler extends SolBaseVisitor<Void>
 
     /* A return value of null in this function signifies something is very wrong with the implementation.
     * As such we throw an InternalError if such ever occurs */
-    private Class<?> visitNodesWithTypeConversionChecking(SolParser.ExprContext leftNode, SolParser.ExprContext rightNode)
+    private Class<?> visitNodesWithTypeConversionChecking(SolParser.ExprContext firstToVisit, SolParser.ExprContext secondToVisit)
     {
-        Class<?> leftType = this.annotatedTypes.get(leftNode);
-        Class<?> rightType = this.annotatedTypes.get(rightNode);
-        Class<?> type = leftType == rightType ? leftType : null;
+        Class<?> firstType = this.annotatedTypes.get(firstToVisit);
+        Class<?> secondType = this.annotatedTypes.get(secondToVisit);
+        Class<?> type = firstType == secondType ? firstType : null;
 
-        this.visit(leftNode);
-        type = this.addConversionIfPossible(leftType, rightType) ? rightType : type;
-        this.visit(rightNode);
-        type = this.addConversionIfPossible(rightType, leftType) ? leftType : type;
+        this.visit(firstToVisit);
+        type = this.addConversionIfPossible(firstType, secondType) ? secondType : type;
+        this.visit(secondToVisit);
+        type = this.addConversionIfPossible(secondType, firstType) ? firstType : type;
 
         if (type == null)
             throw new InternalError("Return type value is null");
@@ -160,19 +160,19 @@ public class solCompiler extends SolBaseVisitor<Void>
     @Override
     public Void visitRelational(SolParser.RelationalContext ctx)
     {
-        Class<?> type = this.visitNodesWithTypeConversionChecking(ctx.expr(0), ctx.expr(1));
+        SolParser.ExprContext firstToVisit = ctx.op.getText().matches("<|<=") ? ctx.expr(0) : ctx.expr(1);
+        SolParser.ExprContext secondToVisit = firstToVisit.equals(ctx.expr(0)) ? ctx.expr(1) : ctx.expr(0);
+        Class<?> type = this.visitNodesWithTypeConversionChecking(firstToVisit, secondToVisit);
 
         InstructionCode code;
         if (type == Integer.class)
-            code = ctx.op.getText().matches("<|>=") ? InstructionCode.ILT : InstructionCode.ILEQ;
+            code = ctx.op.getText().matches("[<>]") ? InstructionCode.ILT : InstructionCode.ILEQ;
         else if (type == Double.class)
-            code = ctx.op.getText().matches("<|>=") ? InstructionCode.DLT : InstructionCode.DLEQ;
+            code = ctx.op.getText().matches("[<>]") ? InstructionCode.DLT : InstructionCode.DLEQ;
         else
             throw new InternalError("Invalid type caused instruction code to be null");
 
         this.instructions.add(new Instruction(code));
-        if (ctx.op.getText().matches(">|>="))
-            this.instructions.add(new Instruction(InstructionCode.NOT));
 
         return null;
     }
