@@ -234,18 +234,18 @@ public class solCompiler extends SolBaseVisitor<Void>
     }
 
     @Override
-    public Void visitLine(SolParser.LineContext ctx)
+    public Void visitPrint(SolParser.PrintContext ctx)
     {
         this.visit(ctx.expr());
 
-        Class<?> type = this.annotatedTypes.get(ctx.expr());
-        if (type == Integer.class)
+        Class<?> exprType = this.annotatedTypes.get(ctx.expr());
+        if (exprType == Integer.class)
             this.instructions.add(new Instruction(InstructionCode.IPRINT));
-        else if (type == Double.class)
+        else if (exprType == Double.class)
             this.instructions.add(new Instruction(InstructionCode.DPRINT));
-        else if (type == String.class)
+        else if (exprType == String.class)
             this.instructions.add(new Instruction(InstructionCode.SPRINT));
-        else if (type == Boolean.class)
+        else if (exprType == Boolean.class)
             this.instructions.add(new Instruction(InstructionCode.BPRINT));
 
         return null;
@@ -254,8 +254,8 @@ public class solCompiler extends SolBaseVisitor<Void>
     @Override
     public Void visitProgram(SolParser.ProgramContext ctx)
     {
-        for (SolParser.LineContext line : ctx.line())
-            this.visit(line);
+        for (SolParser.InstructionContext instruction : ctx.instruction())
+            this.visit(instruction);
         this.instructions.add(new Instruction(InstructionCode.HALT));
         return null;
     }
@@ -336,9 +336,9 @@ public class solCompiler extends SolBaseVisitor<Void>
 
     private void semanticCheck()
     {
-        solTypeAnnotator typeAnnotator = new solTypeAnnotator(this.typeErrorReporter);
-        typeAnnotator.annotateTypes(this.tree);
-        this.annotatedTypes = typeAnnotator.getAnnotatedTypes();
+        solSemanticChecker semanticChecker = new solSemanticChecker(this.typeErrorReporter);
+        semanticChecker.checkSemantics(this.tree);
+        this.annotatedTypes = semanticChecker.getAnnotatedTypes();
     }
 
     private boolean hasNoErrors()

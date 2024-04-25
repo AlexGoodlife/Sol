@@ -4,17 +4,26 @@ import ErrorUtils.ErrorReporter;
 import antlrSol.*;
 import org.antlr.v4.runtime.tree.*;
 
-public class solTypeAnnotator extends SolBaseListener
+import java.util.HashMap;
+
+public class solSemanticChecker extends SolBaseListener
 {
-    private static final String ERROR_MESSAGE = "Type mismatch in operation";
+    private static final String TYPE_MISMATCH_ERROR_MESSAGE = "Type mismatch in operation";
+    private static final String DECLARED_VAR_ERROR_MESSAGE = "Declaring already declared variable in";
+    private static final String UNDECLARED_VAR_ERROR_MESSAGE = "Undeclared variable in";
+    private static final String OUT_OF_LOOP_BREAK_ERROR_MESSAGE = "Breaking out of loop in";
 
     private final ErrorReporter reporter;
     private final ParseTreeProperty<Class<?>> annotatedTypes;
+    private final HashMap<String, Class<?>> variableTypes;
+    private int nestedLoopCount;
 
-    public solTypeAnnotator(ErrorReporter reporter)
+    public solSemanticChecker(ErrorReporter reporter)
     {
         this.reporter = reporter;
         this.annotatedTypes = new ParseTreeProperty<>();
+        this.variableTypes = new HashMap<>();
+        this.nestedLoopCount = 0;
     }
 
     public ParseTreeProperty<Class<?>> getAnnotatedTypes()
@@ -47,6 +56,16 @@ public class solTypeAnnotator extends SolBaseListener
     }
 
     @Override
+    public void exitIdentifier(SolParser.IdentifierContext ctx)
+    {
+        Class<?> variableType = this.variableTypes.get(ctx.IDENTIFIER().getText());
+        if (variableType != null)
+            this.annotatedTypes.put(ctx, variableType);
+        else
+            this.reporter.reportError(ctx, UNDECLARED_VAR_ERROR_MESSAGE);
+    }
+
+    @Override
     public void exitOr(SolParser.OrContext ctx)
     {
         this.exitLogical(ctx, ctx.expr(0), ctx.expr(1));
@@ -70,7 +89,7 @@ public class solTypeAnnotator extends SolBaseListener
         if (isLeftBoolean && isRightBoolean)
             this.annotatedTypes.put(ctx, Boolean.class);
         else
-            this.reporter.reportError(ctx, ERROR_MESSAGE);
+            this.reporter.reportError(ctx, TYPE_MISMATCH_ERROR_MESSAGE);
     }
 
     @Override
@@ -86,7 +105,7 @@ public class solTypeAnnotator extends SolBaseListener
         if (leftType == rightType || isLeftNumber && isRightNumber)
             this.annotatedTypes.put(ctx, Boolean.class);
         else
-            this.reporter.reportError(ctx, ERROR_MESSAGE);
+            this.reporter.reportError(ctx, TYPE_MISMATCH_ERROR_MESSAGE);
     }
 
     @Override
@@ -102,8 +121,7 @@ public class solTypeAnnotator extends SolBaseListener
         if (isLeftNumber && isRightNumber)
             this.annotatedTypes.put(ctx, Boolean.class);
         else
-            this.reporter.reportError(ctx, ERROR_MESSAGE);
-
+            this.reporter.reportError(ctx, TYPE_MISMATCH_ERROR_MESSAGE);
     }
 
     @Override
@@ -129,7 +147,7 @@ public class solTypeAnnotator extends SolBaseListener
         if ((isLeftString || isRightString) || (isLeftNumber && isRightNumber))
             this.annotateAddType(ctx, leftType, rightType);
         else
-            this.reporter.reportError(ctx, ERROR_MESSAGE);
+            this.reporter.reportError(ctx, TYPE_MISMATCH_ERROR_MESSAGE);
     }
 
     private void annotateAddType(SolParser.AddSubContext ctx, Class<?> leftType, Class<?> rightType)
@@ -158,7 +176,7 @@ public class solTypeAnnotator extends SolBaseListener
         if (isLeftNumber && isRightNumber)
             this.annotateArithmeticType(ctx, leftType, rightType);
         else
-            this.reporter.reportError(ctx, ERROR_MESSAGE);
+            this.reporter.reportError(ctx, TYPE_MISMATCH_ERROR_MESSAGE);
     }
 
     private void annotateArithmeticType(SolParser.ExprContext ctx, Class<?> leftType, Class<?> rightType)
@@ -192,7 +210,7 @@ public class solTypeAnnotator extends SolBaseListener
         if (isLeftInteger && isRightInteger)
             this.annotatedTypes.put(ctx, Integer.class);
         else
-            this.reporter.reportError(ctx, ERROR_MESSAGE);
+            this.reporter.reportError(ctx, TYPE_MISMATCH_ERROR_MESSAGE);
     }
 
     @Override
@@ -214,7 +232,7 @@ public class solTypeAnnotator extends SolBaseListener
         if (isExprNumber)
             this.annotatedTypes.put(ctx, exprType);
         else
-            this.reporter.reportError(ctx, ERROR_MESSAGE);
+            this.reporter.reportError(ctx, TYPE_MISMATCH_ERROR_MESSAGE);
     }
 
     private void exitNot(SolParser.NegationContext ctx)
@@ -227,7 +245,7 @@ public class solTypeAnnotator extends SolBaseListener
         if (isExprBoolean)
             this.annotatedTypes.put(ctx, exprType);
         else
-            this.reporter.reportError(ctx, ERROR_MESSAGE);
+            this.reporter.reportError(ctx, TYPE_MISMATCH_ERROR_MESSAGE);
     }
 
     public void exitParentheses(SolParser.ParenthesesContext ctx)
@@ -235,7 +253,121 @@ public class solTypeAnnotator extends SolBaseListener
         this.annotatedTypes.put(ctx, this.annotatedTypes.get(ctx.expr()));
     }
 
-    public void annotateTypes(ParseTree tree)
+    @Override
+    public void enterDeclaration(SolParser.DeclarationContext ctx)
+    {
+        switch (ctx.type.getText())
+        {
+            case "int" -> this.annotatedTypes.put(ctx, Integer.class);
+            case "real" -> this.annotatedTypes.put(ctx, Double.class);
+            case "string" -> this.annotatedTypes.put(ctx, String.class);
+            case "bool" -> this.annotatedTypes.put(ctx, Boolean.class);
+            default -> throw new InternalError("Shouldn't happen...");
+        }
+    }
+
+    @Override
+    public void exitDeclarationAssign(SolParser.DeclarationAssignContext ctx)
+    {
+        if (ctx.IDENTIFIER() == null)
+            return;
+
+        String variableName = ctx.IDENTIFIER().getText();
+        if (this.variableTypes.get(variableName) != null)
+        {
+            this.reporter.reportError(ctx, DECLARED_VAR_ERROR_MESSAGE);
+            return;
+        }
+
+        Class<?> variableType = this.annotatedTypes.get(ctx.getParent());
+        if (ctx.expr() != null)
+        {
+            Class<?> exprType = this.annotatedTypes.get(ctx.expr());
+            if (variableType != exprType && exprType != null)
+                this.reporter.reportError(ctx, TYPE_MISMATCH_ERROR_MESSAGE);
+        }
+        this.variableTypes.put(variableName, variableType);
+    }
+
+    @Override
+    public void exitAssign(SolParser.AssignContext ctx)
+    {
+        if (ctx.IDENTIFIER() == null)
+            return;
+
+        String variableName = ctx.IDENTIFIER().getText();
+        if (this.variableTypes.get(variableName) == null)
+        {
+            this.reporter.reportError(ctx, UNDECLARED_VAR_ERROR_MESSAGE);
+            return;
+        }
+
+        Class<?> variableType = this.variableTypes.get(variableName);
+        Class<?> exprType = this.annotatedTypes.get(ctx.expr());
+        if (exprType == null)
+            return;
+        if (variableType == exprType)
+            this.annotatedTypes.put(ctx, variableType);
+        else
+            this.reporter.reportError(ctx, TYPE_MISMATCH_ERROR_MESSAGE);
+    }
+
+    @Override
+    public void enterWhile(SolParser.WhileContext ctx)
+    {
+        this.nestedLoopCount++;
+    }
+
+    @Override
+    public void exitWhile(SolParser.WhileContext ctx)
+    {
+        this.nestedLoopCount--;
+        Class<?> exprType = this.annotatedTypes.get(ctx.expr());
+        if (exprType == null)
+            return;
+
+        if (exprType != Boolean.class)
+            this.reporter.reportError(ctx, TYPE_MISMATCH_ERROR_MESSAGE);
+    }
+
+    @Override
+    public void enterFor(SolParser.ForContext ctx)
+    {
+        this.nestedLoopCount++;
+    }
+
+    @Override
+    public void exitFor(SolParser.ForContext ctx)
+    {
+        this.nestedLoopCount--;
+        Class<?> variableType = this.annotatedTypes.get(ctx.assign());
+        Class<?> exprType = this.annotatedTypes.get(ctx.expr());
+        if (variableType == null || exprType == null)
+            return;
+
+        if (variableType != Integer.class || exprType != Integer.class)
+            this.reporter.reportError(ctx, TYPE_MISMATCH_ERROR_MESSAGE);
+    }
+
+    @Override
+    public void exitIf(SolParser.IfContext ctx)
+    {
+        Class<?> exprType = this.annotatedTypes.get(ctx.expr());
+        if (exprType == null)
+            return;
+
+        if (exprType != Boolean.class)
+            this.reporter.reportError(ctx, TYPE_MISMATCH_ERROR_MESSAGE);
+    }
+
+    @Override
+    public void exitBreak(SolParser.BreakContext ctx)
+    {
+        if (this.nestedLoopCount == 0)
+            this.reporter.reportError(ctx, OUT_OF_LOOP_BREAK_ERROR_MESSAGE);
+    }
+
+    public void checkSemantics(ParseTree tree)
     {
         ParseTreeWalker walker = new ParseTreeWalker();
         walker.walk(this, tree);

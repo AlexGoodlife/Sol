@@ -1,23 +1,25 @@
 grammar Sol;
 
-program:    instruction+ EOF
+program:    declaration* instruction+ EOF
             ;
 
-instruction:    PRINT expr EOL                                                                          #Print
-                | type=(INT_T|DOUBLE_T|STRING_T|BOOLEAN_T) optionalAssign (',' optionalAssign)* EOL     #Declaration
-                | assign (',' assign)* EOL                                                              #Assignment
-                | BEGIN instruction* END                                                                #Block
-                | WHILE expr DO instruction                                                             #While
-                | FOR assign TO expr DO instruction                                                     #For
-                | IF expr THEN instruction (ELSE instruction)?                                          #If
-                | EOL                                                                                   #Empty
-                | BREAK EOL                                                                             #Break
+declaration:    type=(INT_T|DOUBLE_T|STRING_T|BOOLEAN_T) declarationAssign (',' declarationAssign)* EOL
                 ;
 
-optionalAssign: IDENTEFIER ('=' expr)?
-            ;
+declarationAssign:  IDENTIFIER ('=' expr)?
+                    ;
 
-assign: IDENTEFIER '=' expr
+instruction:    PRINT expr EOL                                      #Print
+                | assign EOL                                        #Assignment
+                | BEGIN instruction* END                            #Block
+                | WHILE expr DO instruction                         #While
+                | FOR assign TO expr DO instruction                 #For
+                | IF expr THEN instruction (ELSE instruction)?      #If
+                | EOL                                               #Empty
+                | BREAK EOL                                         #Break
+                ;
+
+assign: IDENTIFIER '=' expr
         ;
 
 expr:   LPAREN expr RPAREN                  #Parentheses
@@ -32,7 +34,7 @@ expr:   LPAREN expr RPAREN                  #Parentheses
         | DOUBLE        		            #Double
         | STRING        		            #String
         | BOOLEAN        		            #Boolean
-        | IDENTEFIER                        #Identefier
+        | IDENTIFIER                        #Identifier
         ;
 
 //Language types
@@ -78,8 +80,8 @@ NOT: 'not';
 AND: 'and';
 OR: 'or';
 
-//Identefier
-IDENTEFIER: ('_'|LETTER)('_'|LETTER|DIGIT)*;
+//Identifier
+IDENTIFIER: ('_'|LETTER)('_'|LETTER|DIGIT)*;
 
 //End of line
 EOL: ';';
