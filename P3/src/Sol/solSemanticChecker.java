@@ -273,7 +273,7 @@ public class solSemanticChecker extends SolBaseListener
             return;
 
         String variableName = ctx.IDENTIFIER().getText();
-        if (this.variableTypes.get(variableName) != null)
+        if (this.variableTypes.containsKey(variableName))
         {
             this.reporter.reportError(ctx, DECLARED_VAR_ERROR_MESSAGE);
             return;
@@ -296,7 +296,7 @@ public class solSemanticChecker extends SolBaseListener
             return;
 
         String variableName = ctx.IDENTIFIER().getText();
-        if (this.variableTypes.get(variableName) == null)
+        if (!this.variableTypes.containsKey(variableName))
         {
             this.reporter.reportError(ctx, UNDECLARED_VAR_ERROR_MESSAGE);
             return;
@@ -306,6 +306,7 @@ public class solSemanticChecker extends SolBaseListener
         Class<?> exprType = this.annotatedTypes.get(ctx.expr());
         if (exprType == null)
             return;
+
         if (variableType == exprType)
             this.annotatedTypes.put(ctx, variableType);
         else
