@@ -100,9 +100,7 @@ public class solSemanticChecker extends SolBaseListener
         if (leftType == null || rightType == null)
             return;
 
-        boolean isLeftNumber = leftType == Integer.class || leftType == Double.class;
-        boolean isRightNumber = rightType == Integer.class || rightType == Double.class;
-        if (leftType == rightType || isLeftNumber && isRightNumber)
+        if (compatibleTypes(leftType, rightType))
             this.annotatedTypes.put(ctx, Boolean.class);
         else
             this.reporter.reportError(ctx, TYPE_MISMATCH_ERROR_MESSAGE);
@@ -280,17 +278,24 @@ public class solSemanticChecker extends SolBaseListener
         }
 
         Class<?> variableType = this.annotatedTypes.get(ctx.getParent());
-        if(variableType == null){
+        if (variableType == null)
             throw new InternalError("Variable has no type after declaration? Shouldn't happen");
-        }
+
         if (ctx.expr() != null)
         {
             Class<?> exprType = this.annotatedTypes.get(ctx.expr());
-            if (exprType != null && variableType != exprType )
+            if (exprType != null && !compatibleTypes(variableType, exprType))
                 this.reporter.reportError(ctx, TYPE_MISMATCH_ERROR_MESSAGE);
         }
         this.variableTypes.put(variableName, variableType);
         this.annotatedTypes.put(ctx, variableType);
+    }
+
+    private static boolean compatibleTypes(Class<?> type1, Class<?> type2)
+    {
+        boolean isType1Number = type1 == Integer.class || type1 == Double.class;
+        boolean isType2Number = type2 == Integer.class || type2 == Double.class;
+        return type1 == type2 || (isType1Number && isType2Number);
     }
 
     @Override
@@ -311,7 +316,7 @@ public class solSemanticChecker extends SolBaseListener
         if (exprType == null)
             return;
 
-        if (variableType == exprType)
+        if (compatibleTypes(variableType, exprType))
             this.annotatedTypes.put(ctx, variableType);
         else
             this.reporter.reportError(ctx, TYPE_MISMATCH_ERROR_MESSAGE);
