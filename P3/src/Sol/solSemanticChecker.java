@@ -280,13 +280,17 @@ public class solSemanticChecker extends SolBaseListener
         }
 
         Class<?> variableType = this.annotatedTypes.get(ctx.getParent());
+        if(variableType == null){
+            throw new InternalError("Variable has no type after declaration? Shouldn't happen");
+        }
         if (ctx.expr() != null)
         {
             Class<?> exprType = this.annotatedTypes.get(ctx.expr());
-            if (variableType != exprType && exprType != null)
+            if (exprType != null && variableType != exprType )
                 this.reporter.reportError(ctx, TYPE_MISMATCH_ERROR_MESSAGE);
         }
         this.variableTypes.put(variableName, variableType);
+        this.annotatedTypes.put(ctx, variableType);
     }
 
     @Override
