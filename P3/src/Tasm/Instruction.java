@@ -2,8 +2,10 @@ package Tasm;
 
 public class Instruction
 {
+    private static final int TO_DEFINE = -1;
+
     private final InstructionCode instruction;
-    private final Integer operand;
+    private Integer operand;
 
     public Instruction(InstructionCode instruction, Integer operand)
     {
@@ -24,6 +26,12 @@ public class Instruction
     public Integer getOperand()
     {
         return this.operand;
+    }
+    
+    public void backPatch(int newOperand)
+    {
+        if (this.operand == TO_DEFINE)
+            this.operand = newOperand;
     }
 
     @Override
