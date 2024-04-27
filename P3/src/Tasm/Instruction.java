@@ -2,7 +2,7 @@ package Tasm;
 
 public class Instruction
 {
-    private static final int TO_DEFINE = -1;
+    public static final int TO_DEFINE = -1;
 
     private final InstructionCode instruction;
     private Integer operand;

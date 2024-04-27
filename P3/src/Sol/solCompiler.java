@@ -9,6 +9,8 @@ import Tasm.*;
 import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Stack;
 
 /* Why use a visitor? Because we want to know if we need to insert conversion instructions prior to visiting any upcoming nodes in an expression.
 * With a listener this would be much harder to do in a clean manner,
@@ -37,6 +39,15 @@ public class solCompiler extends SolBaseVisitor<Void>
     private ParseTreeProperty<Class<?>> annotatedTypes;
     private ErrorReporter typeErrorReporter;
 
+    private int globalMemoryPointer = 0;
+
+    private HashMap<String, Integer> variableIndices;
+
+
+    private HashMap<String, Integer> labels;
+
+    private Stack<Instruction> breaks;
+
     public solCompiler()
     {
         this.sourceFileName = DEFAULT_SOURCE_FILE_NAME;
@@ -48,6 +59,11 @@ public class solCompiler extends SolBaseVisitor<Void>
     public Void visitInt(SolParser.IntContext ctx)
     {
         this.instructions.add(new Instruction(InstructionCode.ICONST, Integer.valueOf(ctx.INT().getText())));
+        return null;
+    }
+
+    public Void visitIdentifier(SolParser.IdentifierContext ctx){
+        this.instructions.add(new Instruction(InstructionCode.GLOAD, this.variableIndices.get(ctx.IDENTIFIER().getText())));
         return null;
     }
 
@@ -251,9 +267,109 @@ public class solCompiler extends SolBaseVisitor<Void>
         return null;
     }
 
+    public Void visitDeclaration(SolParser.DeclarationContext ctx){ // Assumes at least 1 declaration
+        this.instructions.add(new Instruction(InstructionCode.GALLOC, ctx.declarationAssign().size()));
+        for(SolParser.DeclarationAssignContext context : ctx.declarationAssign()){
+            this.visit(context);
+        }
+        return null;
+    }
+
+    public Void visitDeclarationAssign(SolParser.DeclarationAssignContext ctx){
+        if(ctx.expr() != null){
+            this.visit(ctx.expr());
+            this.instructions.add(new Instruction(InstructionCode.GSTORE, this.globalMemoryPointer));
+        }
+        this.variableIndices.put(ctx.IDENTIFIER().getText(), this.globalMemoryPointer++);
+        return null;
+    }
+
+    public Void visitAssign(SolParser.AssignContext ctx){
+        if(ctx.expr() != null){
+            this.visit(ctx.expr());
+            int index = this.variableIndices.get(ctx.IDENTIFIER().getText());
+            this.instructions.add(new Instruction(InstructionCode.GSTORE, index));
+        }
+        return null;
+    }
+
+    public Void visitIf(SolParser.IfContext ctx){
+        visit(ctx.expr());
+        Instruction jump = new Instruction(InstructionCode.JUMPF,Instruction.TO_DEFINE);
+        this.instructions.add(jump);
+        visit(ctx.instruction(0));
+
+        Instruction unconditionalJump = new Instruction(InstructionCode.JUMP,Instruction.TO_DEFINE); // When If ends we jump to the end
+        this.instructions.add(unconditionalJump);
+
+        jump.backPatch(this.instructions.size()); // Jump to the else block
+        if(ctx.ELSE() != null){
+            visit(ctx.instruction(1));
+        }
+        unconditionalJump.backPatch(this.instructions.size());
+       return null;
+    }
+
+    public Void visitWhile(SolParser.WhileContext ctx){
+        int breaksSize = this.breaks.size();
+        int startIndex = this.instructions.size();
+        visit(ctx.expr());
+        Instruction jump = new Instruction(InstructionCode.JUMPF,Instruction.TO_DEFINE);
+        this.instructions.add(jump);
+        visit(ctx.instruction());
+
+        Instruction unconditionalJump = new Instruction(InstructionCode.JUMP,startIndex); // When If ends we jump to the end
+        this.instructions.add(unconditionalJump);
+
+        jump.backPatch(this.instructions.size());
+        while(this.breaks.size() > breaksSize){
+            this.breaks.pop().backPatch(this.instructions.size());
+        }
+        return null;
+    }
+
+    public Void visitFor(SolParser.ForContext ctx){
+        int breaksSize = this.breaks.size();
+        visit(ctx.assign());
+        String identifier = ctx.assign().IDENTIFIER().getText();
+        int startIndex = this.instructions.size();
+        visit(ctx.expr());
+
+        int variableIndex = this.variableIndices.get(identifier);
+        this.instructions.add(new Instruction(InstructionCode.GLOAD,this.variableIndices.get(identifier)));
+        this.instructions.add(new Instruction(InstructionCode.ILT));
+        Instruction jump = new Instruction(InstructionCode.JUMPT,Instruction.TO_DEFINE);
+        this.instructions.add(jump);
+        visit(ctx.instruction());
+
+        //Increment variable
+        this.instructions.add(new Instruction(InstructionCode.GLOAD,variableIndex));
+        this.instructions.add(new Instruction(InstructionCode.ICONST,1));
+        this.instructions.add(new Instruction(InstructionCode.IADD));
+        this.instructions.add(new Instruction(InstructionCode.GSTORE, variableIndex));
+
+        Instruction unconditionalJump = new Instruction(InstructionCode.JUMP,startIndex); // When If ends we jump to the end
+        this.instructions.add(unconditionalJump);
+
+        jump.backPatch(this.instructions.size());
+        while(this.breaks.size() > breaksSize){
+            this.breaks.pop().backPatch(this.instructions.size());
+        }
+        return null;
+    }
+
+    public Void visitBreak(SolParser.BreakContext ctx){
+        Instruction instructionToAppend = new Instruction(InstructionCode.JUMP, Instruction.TO_DEFINE);
+        this.breaks.push(instructionToAppend);
+        this.instructions.add(instructionToAppend);
+        return null;
+    }
     @Override
     public Void visitProgram(SolParser.ProgramContext ctx)
     {
+        for(SolParser.DeclarationContext decl : ctx.declaration()){
+            this.visit(decl);
+        }
         for (SolParser.InstructionContext instruction : ctx.instruction())
             this.visit(instruction);
         this.instructions.add(new Instruction(InstructionCode.HALT));
@@ -323,6 +439,9 @@ public class solCompiler extends SolBaseVisitor<Void>
         this.instructions = new ArrayList<>();
         this.constantPool = new ConstantPool();
         this.typeErrorReporter = new ErrorReporter();
+        this.variableIndices = new HashMap<>();
+        this.labels = new HashMap<>();
+        this.breaks = new Stack<>();
     }
 
     private SolParser generateParser() throws IOException
