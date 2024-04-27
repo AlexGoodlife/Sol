@@ -182,7 +182,12 @@ public class tVm
 
         switch (instruction.getInstruction())
         {
-            case GLOAD -> this.executionStack.push(this.globalMemory.get(index));
+            case GLOAD -> {
+                Value v = this.globalMemory.get(index);
+                if (v.getValue() == null)
+                    this.genericError(instruction, "Accessing NIL value");
+                this.executionStack.push(this.globalMemory.get(index));
+            }
             case GSTORE -> this.globalMemory.set(index, this.executionStack.pop());
         }
     }
@@ -366,7 +371,7 @@ public class tVm
 
     private void genericError(Instruction instruction, String errorMessage)
     {
-        String message = this.instructionPointer + ":0 " + instruction + " "  + errorMessage;
+        String message = this.instructionPointer + ":0 '" + instruction + "' "  + errorMessage;
         RuntimeError.dispatchError(message);
     }
 
