@@ -288,7 +288,6 @@ public class solSemanticChecker extends SolBaseListener
                 this.reporter.reportError(ctx, TYPE_MISMATCH_ERROR_MESSAGE);
         }
         this.variableTypes.put(variableName, variableType);
-        this.annotatedTypes.put(ctx, variableType);
     }
 
     private static boolean compatibleTypes(Class<?> type1, Class<?> type2)

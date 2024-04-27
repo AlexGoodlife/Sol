@@ -23,47 +23,40 @@ public class solCompiler extends SolBaseVisitor<Void>
     public static final String SOURCE_FILE_EXTENSION = "sol";
     private static final String BYTECODES_FILE_FLAG = "-o";
     private static final String SHOW_ASSEMBLY_FLAG = "--asm";
+    private static final String NO_TASM_FILE_FLAG = "--no-tasm";
 
     private static final String DEFAULT_SOURCE_FILE_NAME = null;
     private static final String DEFAULT_BYTECODES_FILE_NAME = "a.tbc";
     private static final boolean DEFAULT_SHOW_ASSEMBLY = false;
+    private static final boolean DEFAULT_GENERATE_TASM_FILE = true;
+
 
     private String sourceFileName;
     private String byteCodesFileName;
     private boolean showAssembly;
+    private boolean generateTasmFile;
 
     private SolParser parser;
     private ParseTree tree;
     private ArrayList<Instruction> instructions;
     private ConstantPool constantPool;
     private ParseTreeProperty<Class<?>> annotatedTypes;
-    private ErrorReporter typeErrorReporter;
-
-    private int globalMemoryPointer = 0;
-
     private HashMap<String, Integer> variableIndices;
-
-
-    private HashMap<String, Integer> labels;
-
     private Stack<Instruction> breaks;
+    private ErrorReporter reporter;
 
     public solCompiler()
     {
         this.sourceFileName = DEFAULT_SOURCE_FILE_NAME;
         this.byteCodesFileName = DEFAULT_BYTECODES_FILE_NAME;
         this.showAssembly = DEFAULT_SHOW_ASSEMBLY;
+        this.generateTasmFile = DEFAULT_GENERATE_TASM_FILE;
     }
 
     @Override
     public Void visitInt(SolParser.IntContext ctx)
     {
         this.instructions.add(new Instruction(InstructionCode.ICONST, Integer.valueOf(ctx.INT().getText())));
-        return null;
-    }
-
-    public Void visitIdentifier(SolParser.IdentifierContext ctx){
-        this.instructions.add(new Instruction(InstructionCode.GLOAD, this.variableIndices.get(ctx.IDENTIFIER().getText())));
         return null;
     }
 
@@ -92,6 +85,13 @@ public class solCompiler extends SolBaseVisitor<Void>
             this.instructions.add(new Instruction(InstructionCode.TCONST));
         else
             this.instructions.add(new Instruction(InstructionCode.FCONST));
+        return null;
+    }
+
+    @Override
+    public Void visitIdentifier(SolParser.IdentifierContext ctx)
+    {
+        this.instructions.add(new Instruction(InstructionCode.GLOAD, this.variableIndices.get(ctx.IDENTIFIER().getText())));
         return null;
     }
 
@@ -189,7 +189,6 @@ public class solCompiler extends SolBaseVisitor<Void>
             throw new InternalError("Invalid type caused instruction code to be null");
 
         this.instructions.add(new Instruction(code));
-
         return null;
     }
 
@@ -209,7 +208,6 @@ public class solCompiler extends SolBaseVisitor<Void>
             throw new InternalError("Invalid type caused instruction code to be null");
 
         this.instructions.add(new Instruction(code));
-
         return null;
     }
 
@@ -229,7 +227,6 @@ public class solCompiler extends SolBaseVisitor<Void>
             throw new InternalError("Invalid type caused instruction code to be null");
 
         this.instructions.add(new Instruction(code));
-
         return null;
     }
 
@@ -246,6 +243,27 @@ public class solCompiler extends SolBaseVisitor<Void>
         else if (exprType == Boolean.class)
             this.instructions.add(new Instruction(InstructionCode.NOT));
 
+        return null;
+    }
+
+    public Void visitDeclaration(SolParser.DeclarationContext ctx)
+    {
+        this.instructions.add(new Instruction(InstructionCode.GALLOC, ctx.declarationAssign().size()));
+        for (SolParser.DeclarationAssignContext context : ctx.declarationAssign())
+            this.visit(context);
+        return null;
+    }
+
+    public Void visitDeclarationAssign(SolParser.DeclarationAssignContext ctx)
+    {
+        if (ctx.expr() != null)
+        {
+            this.visit(ctx.expr());
+            if (this.annotatedTypes.get(ctx.getParent()) == Double.class && this.annotatedTypes.get(ctx.expr()) == Integer.class)
+                this.instructions.add(new Instruction(InstructionCode.ITOD));
+            this.instructions.add(new Instruction(InstructionCode.GSTORE, this.variableIndices.size()));
+        }
+        this.variableIndices.put(ctx.IDENTIFIER().getText(), this.variableIndices.size());
         return null;
     }
 
@@ -267,109 +285,85 @@ public class solCompiler extends SolBaseVisitor<Void>
         return null;
     }
 
-    public Void visitDeclaration(SolParser.DeclarationContext ctx){ // Assumes at least 1 declaration
-        this.instructions.add(new Instruction(InstructionCode.GALLOC, ctx.declarationAssign().size()));
-        for(SolParser.DeclarationAssignContext context : ctx.declarationAssign()){
-            this.visit(context);
-        }
+    public Void visitAssign(SolParser.AssignContext ctx)
+    {
+        this.visit(ctx.expr());
+        if (this.annotatedTypes.get(ctx) == Double.class && this.annotatedTypes.get(ctx.expr()) == Integer.class)
+            this.instructions.add(new Instruction(InstructionCode.ITOD));
+        this.instructions.add(new Instruction(InstructionCode.GSTORE, this.variableIndices.get(ctx.IDENTIFIER().getText())));
         return null;
     }
 
-    public Void visitDeclarationAssign(SolParser.DeclarationAssignContext ctx){
-        if(ctx.expr() != null){
-            this.visit(ctx.expr());
-            this.instructions.add(new Instruction(InstructionCode.GSTORE, this.globalMemoryPointer));
-        }
-        this.variableIndices.put(ctx.IDENTIFIER().getText(), this.globalMemoryPointer++);
-        return null;
-    }
-
-    public Void visitAssign(SolParser.AssignContext ctx){
-        if(ctx.expr() != null){
-            this.visit(ctx.expr());
-            int index = this.variableIndices.get(ctx.IDENTIFIER().getText());
-            this.instructions.add(new Instruction(InstructionCode.GSTORE, index));
-        }
-        return null;
-    }
-
-    public Void visitIf(SolParser.IfContext ctx){
-        visit(ctx.expr());
-        Instruction jump = new Instruction(InstructionCode.JUMPF,Instruction.TO_DEFINE);
+    public Void visitWhile(SolParser.WhileContext ctx)
+    {
+        int initialBreakCount = this.breaks.size();
+        int loopStart = this.instructions.size();
+        this.visit(ctx.expr());
+        Instruction jump = new Instruction(InstructionCode.JUMPF, Instruction.TO_DEFINE);
         this.instructions.add(jump);
-        visit(ctx.instruction(0));
-
-        Instruction unconditionalJump = new Instruction(InstructionCode.JUMP,Instruction.TO_DEFINE); // When If ends we jump to the end
-        this.instructions.add(unconditionalJump);
-
-        jump.backPatch(this.instructions.size()); // Jump to the else block
-        if(ctx.ELSE() != null){
-            visit(ctx.instruction(1));
-        }
-        unconditionalJump.backPatch(this.instructions.size());
-       return null;
-    }
-
-    public Void visitWhile(SolParser.WhileContext ctx){
-        int breaksSize = this.breaks.size();
-        int startIndex = this.instructions.size();
-        visit(ctx.expr());
-        Instruction jump = new Instruction(InstructionCode.JUMPF,Instruction.TO_DEFINE);
-        this.instructions.add(jump);
-        visit(ctx.instruction());
-
-        Instruction unconditionalJump = new Instruction(InstructionCode.JUMP,startIndex); // When If ends we jump to the end
-        this.instructions.add(unconditionalJump);
-
+        this.visit(ctx.instruction());
+        this.instructions.add(new Instruction(InstructionCode.JUMP, loopStart));
         jump.backPatch(this.instructions.size());
-        while(this.breaks.size() > breaksSize){
+        while (this.breaks.size() > initialBreakCount)
             this.breaks.pop().backPatch(this.instructions.size());
-        }
         return null;
     }
 
-    public Void visitFor(SolParser.ForContext ctx){
-        int breaksSize = this.breaks.size();
-        visit(ctx.assign());
-        String identifier = ctx.assign().IDENTIFIER().getText();
-        int startIndex = this.instructions.size();
-        visit(ctx.expr());
+    public Void visitFor(SolParser.ForContext ctx)
+    {
+        this.visit(ctx.assign());
 
-        int variableIndex = this.variableIndices.get(identifier);
-        this.instructions.add(new Instruction(InstructionCode.GLOAD,this.variableIndices.get(identifier)));
+        int initialBreakCount = this.breaks.size();
+        int loopStart = this.instructions.size();
+        this.visit(ctx.expr());
+        int variableIndex = this.variableIndices.get(ctx.assign().IDENTIFIER().getText());
+        this.instructions.add(new Instruction(InstructionCode.GLOAD, variableIndex));
         this.instructions.add(new Instruction(InstructionCode.ILT));
-        Instruction jump = new Instruction(InstructionCode.JUMPT,Instruction.TO_DEFINE);
+        Instruction jump = new Instruction(InstructionCode.JUMPT, Instruction.TO_DEFINE);
         this.instructions.add(jump);
-        visit(ctx.instruction());
+        this.visit(ctx.instruction());
 
         //Increment variable
-        this.instructions.add(new Instruction(InstructionCode.GLOAD,variableIndex));
-        this.instructions.add(new Instruction(InstructionCode.ICONST,1));
+        this.instructions.add(new Instruction(InstructionCode.GLOAD, variableIndex));
+        this.instructions.add(new Instruction(InstructionCode.ICONST, 1));
         this.instructions.add(new Instruction(InstructionCode.IADD));
         this.instructions.add(new Instruction(InstructionCode.GSTORE, variableIndex));
 
-        Instruction unconditionalJump = new Instruction(InstructionCode.JUMP,startIndex); // When If ends we jump to the end
-        this.instructions.add(unconditionalJump);
-
+        this.instructions.add(new Instruction(InstructionCode.JUMP, loopStart));
         jump.backPatch(this.instructions.size());
-        while(this.breaks.size() > breaksSize){
+        while (this.breaks.size() > initialBreakCount)
             this.breaks.pop().backPatch(this.instructions.size());
-        }
         return null;
     }
 
-    public Void visitBreak(SolParser.BreakContext ctx){
-        Instruction instructionToAppend = new Instruction(InstructionCode.JUMP, Instruction.TO_DEFINE);
-        this.breaks.push(instructionToAppend);
-        this.instructions.add(instructionToAppend);
+    public Void visitIf(SolParser.IfContext ctx)
+    {
+        this.visit(ctx.expr());
+        Instruction jump = new Instruction(InstructionCode.JUMPF, Instruction.TO_DEFINE);
+        this.instructions.add(jump);
+        this.visit(ctx.instruction(0));
+        Instruction unconditionalJump = new Instruction(InstructionCode.JUMP, Instruction.TO_DEFINE);
+        this.instructions.add(unconditionalJump);
+        jump.backPatch(this.instructions.size());
+        if(ctx.ELSE() != null)
+            this.visit(ctx.instruction(1));
+        unconditionalJump.backPatch(this.instructions.size());
         return null;
     }
+
+    public Void visitBreak(SolParser.BreakContext ctx)
+    {
+        Instruction breakInstruction = new Instruction(InstructionCode.JUMP, Instruction.TO_DEFINE);
+        this.breaks.push(breakInstruction);
+        this.instructions.add(breakInstruction);
+        return null;
+    }
+
     @Override
     public Void visitProgram(SolParser.ProgramContext ctx)
     {
-        for(SolParser.DeclarationContext decl : ctx.declaration()){
-            this.visit(decl);
-        }
+        for(SolParser.DeclarationContext declaration : ctx.declaration())
+            this.visit(declaration);
         for (SolParser.InstructionContext instruction : ctx.instruction())
             this.visit(instruction);
         this.instructions.add(new Instruction(InstructionCode.HALT));
@@ -401,7 +395,8 @@ public class solCompiler extends SolBaseVisitor<Void>
                 case SOURCE_FILE_FLAG:
                     String filename = args[++i];
                     this.sourceFileName = filename;
-                    this.byteCodesFileName = filename.replaceAll("\\.sol", ".tbc");
+                    if (this.byteCodesFileName.equals(DEFAULT_BYTECODES_FILE_NAME))
+                        this.byteCodesFileName = filename.replaceAll("\\.sol", ".tbc");
                     break;
                 case BYTECODES_FILE_FLAG:
                     this.byteCodesFileName = args[++i];
@@ -409,6 +404,8 @@ public class solCompiler extends SolBaseVisitor<Void>
                 case SHOW_ASSEMBLY_FLAG:
                     this.showAssembly = true;
                     break;
+                case NO_TASM_FILE_FLAG:
+                    this.generateTasmFile = false;
                 default:
                     RuntimeError.dispatchError("Invalid flag '" + args[i] + "'");
             }
@@ -438,10 +435,9 @@ public class solCompiler extends SolBaseVisitor<Void>
         this.tree = this.parser.program();
         this.instructions = new ArrayList<>();
         this.constantPool = new ConstantPool();
-        this.typeErrorReporter = new ErrorReporter();
         this.variableIndices = new HashMap<>();
-        this.labels = new HashMap<>();
         this.breaks = new Stack<>();
+        this.reporter = new ErrorReporter();
     }
 
     private SolParser generateParser() throws IOException
@@ -455,22 +451,22 @@ public class solCompiler extends SolBaseVisitor<Void>
 
     private void semanticCheck()
     {
-        solSemanticChecker semanticChecker = new solSemanticChecker(this.typeErrorReporter);
+        solSemanticChecker semanticChecker = new solSemanticChecker(this.reporter);
         semanticChecker.checkSemantics(this.tree);
         this.annotatedTypes = semanticChecker.getAnnotatedTypes();
     }
 
     private boolean hasNoErrors()
     {
-        return !this.typeErrorReporter.hasReportedErrors() && !(this.parser.getNumberOfSyntaxErrors() > 0);
+        return !this.reporter.hasReportedErrors() && !(this.parser.getNumberOfSyntaxErrors() > 0);
     }
 
     private void unsuccessfulCompileError()
     {
         //ANTLR should print all the syntax errors prior, if any
-        System.err.println(this.typeErrorReporter);
+        System.err.println(this.reporter);
 
-        int semanticErrorCount = this.typeErrorReporter.getErrorCount();
+        int semanticErrorCount = this.reporter.getErrorCount();
         int syntaxErrorCount = this.parser.getNumberOfSyntaxErrors();
         String syntaxErrors = syntaxErrorCount == 1 ? " syntax error " : " syntax errors ";
         String semanticErrors = semanticErrorCount == 1 ? " semantic error" : " semantic errors";
@@ -492,6 +488,8 @@ public class solCompiler extends SolBaseVisitor<Void>
         this.writeConstantPool(byteCodes);
         if (this.showAssembly)
             this.printAssembledCode();
+        if (this.generateTasmFile)
+            this.writeTasmFile();
     }
 
     private void writeInstructions(DataOutputStream byteCodes) throws IOException
@@ -526,10 +524,64 @@ public class solCompiler extends SolBaseVisitor<Void>
     {
         System.out.println("ASSEMBLED INSTRUCTIONS:");
         for (int i = 0; i < this.instructions.size(); i++)
-            System.out.println(i + 1 + ":\t" + this.instructions.get(i));
+            System.out.println(i + ":\t" + this.instructions.get(i));
 
         System.out.println("\nASSEMBLED CONSTANT POOL:");
         System.out.println(this.constantPool);
+    }
+
+    private void writeTasmFile() throws IOException
+    {
+        FileWriter tasmFile = new FileWriter(this.sourceFileName.replaceAll("\\.sol", ".tasm"));
+        String[] tasmCode = this.generateTasmCode();
+        for (String line : tasmCode)
+            tasmFile.write(line);
+        tasmFile.close();
+    }
+
+    private String[] generateTasmCode()
+    {
+        String[] tasmCode = new String[this.instructions.size()];
+        for (int i = 0; i < this.instructions.size(); i++)
+        {
+            Instruction instruction = this.instructions.get(i);
+            tasmCode[i] = this.constructTasmLine(instruction);
+        }
+        return this.generateLabels(tasmCode);
+    }
+
+    private String constructTasmLine(Instruction instruction)
+    {
+        StringBuilder line = new StringBuilder("\t".repeat(4) + instruction.getInstruction().name().toLowerCase());
+        switch (instruction.getInstruction())
+        {
+            case DCONST -> line.append(" ").append(this.constantPool.get(instruction.getOperand()));
+            case SCONST -> line.append(" \"").append(this.constantPool.get(instruction.getOperand())).append("\"");
+            case JUMP, JUMPT, JUMPF -> {
+                String label = "_l" + instruction.getOperand();
+                line.append(" ").append(label);
+            }
+            default -> {
+                if (instruction.getOperand() != null)
+                    line.append(" ").append(instruction.getOperand());
+            }
+        }
+        line.append("\n");
+        return line.toString();
+    }
+
+    private String[] generateLabels(String[] tasmCode)
+    {
+        for (Instruction instruction : this.instructions)
+        {
+            InstructionCode code = instruction.getInstruction();
+            if (code == InstructionCode.JUMP || code == InstructionCode.JUMPT || code == InstructionCode.JUMPF) {
+                String label = "_l" + instruction.getOperand() + ":";
+                if (!tasmCode[instruction.getOperand()].contains(label))
+                    tasmCode[instruction.getOperand()] = tasmCode[instruction.getOperand()].replaceFirst("\t", label);
+            }
+        }
+        return tasmCode;
     }
 
     public static void main(String[] args)

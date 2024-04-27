@@ -122,7 +122,8 @@ public class tAssembler extends TasmBaseListener
                 case SOURCE_FILE_FLAG:
                     String filename = args[++i];
                     this.sourceFileName = filename;
-                    this.byteCodesFileName = filename.replaceAll("\\.tasm", ".tbc");
+                    if (this.byteCodesFileName.equals(DEFAULT_BYTECODES_FILE_NAME))
+                        this.byteCodesFileName = filename.replaceAll("\\.tasm", ".tbc");
                     break;
                 case BYTECODES_FILE_FLAG:
                     this.byteCodesFileName = args[++i];
@@ -247,7 +248,7 @@ public class tAssembler extends TasmBaseListener
     {
         System.out.println("ASSEMBLED INSTRUCTIONS:");
         for (int i = 0; i < this.instructions.size(); i++)
-            System.out.println(i + 1 + ":\t" + this.instructions.get(i));
+            System.out.println(i + ":\t" + this.instructions.get(i));
 
         System.out.println("\nASSEMBLED CONSTANT POOL:");
         System.out.println(this.constantPool);
