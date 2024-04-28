@@ -17,7 +17,7 @@ import java.util.Stack;
 * as we would need to check the type of the parent node and its other child nodes in the child node for type conversion instructions */
 public class solCompiler extends SolBaseVisitor<Void>
 {
-    private static final int MAX_ARGUMENTS_SIZE = 5;
+    private static final int MAX_ARGUMENTS_SIZE = 6;
 
     private static final String SOURCE_FILE_FLAG = "-i";
     public static final String SOURCE_FILE_EXTENSION = "sol";
@@ -246,14 +246,6 @@ public class solCompiler extends SolBaseVisitor<Void>
         return null;
     }
 
-    public Void visitDeclaration(SolParser.DeclarationContext ctx)
-    {
-        this.instructions.add(new Instruction(InstructionCode.GALLOC, ctx.declarationAssign().size()));
-        for (SolParser.DeclarationAssignContext context : ctx.declarationAssign())
-            this.visit(context);
-        return null;
-    }
-
     public Void visitDeclarationAssign(SolParser.DeclarationAssignContext ctx)
     {
         if (ctx.expr() != null)
@@ -298,41 +290,48 @@ public class solCompiler extends SolBaseVisitor<Void>
     {
         int initialBreakCount = this.breaks.size();
         int loopStart = this.instructions.size();
+
         this.visit(ctx.expr());
         Instruction jump = new Instruction(InstructionCode.JUMPF, Instruction.TO_DEFINE);
         this.instructions.add(jump);
+
         this.visit(ctx.instruction());
         this.instructions.add(new Instruction(InstructionCode.JUMP, loopStart));
+
         jump.backPatch(this.instructions.size());
-        while (this.breaks.size() > initialBreakCount)
-            this.breaks.pop().backPatch(this.instructions.size());
+        this.backPatchBreaks(this.breaks.size() - initialBreakCount);
         return null;
+    }
+
+    private void backPatchBreaks(int nBreaks)
+    {
+        for (;nBreaks > 0; nBreaks--)
+            this.breaks.pop().backPatch(this.instructions.size());
     }
 
     public Void visitFor(SolParser.ForContext ctx)
     {
         this.visit(ctx.assign());
-
         int initialBreakCount = this.breaks.size();
         int loopStart = this.instructions.size();
-        this.visit(ctx.expr());
         int variableIndex = this.variableIndices.get(ctx.assign().IDENTIFIER().getText());
+
+        this.visit(ctx.expr());
         this.instructions.add(new Instruction(InstructionCode.GLOAD, variableIndex));
         this.instructions.add(new Instruction(InstructionCode.ILT));
         Instruction jump = new Instruction(InstructionCode.JUMPT, Instruction.TO_DEFINE);
         this.instructions.add(jump);
-        this.visit(ctx.instruction());
 
+        this.visit(ctx.instruction());
         //Increment variable
         this.instructions.add(new Instruction(InstructionCode.GLOAD, variableIndex));
         this.instructions.add(new Instruction(InstructionCode.ICONST, 1));
         this.instructions.add(new Instruction(InstructionCode.IADD));
         this.instructions.add(new Instruction(InstructionCode.GSTORE, variableIndex));
-
         this.instructions.add(new Instruction(InstructionCode.JUMP, loopStart));
+
         jump.backPatch(this.instructions.size());
-        while (this.breaks.size() > initialBreakCount)
-            this.breaks.pop().backPatch(this.instructions.size());
+        this.backPatchBreaks(this.breaks.size() - initialBreakCount);
         return null;
     }
 
@@ -341,13 +340,21 @@ public class solCompiler extends SolBaseVisitor<Void>
         this.visit(ctx.expr());
         Instruction jump = new Instruction(InstructionCode.JUMPF, Instruction.TO_DEFINE);
         this.instructions.add(jump);
+
         this.visit(ctx.instruction(0));
-        Instruction unconditionalJump = new Instruction(InstructionCode.JUMP, Instruction.TO_DEFINE);
-        this.instructions.add(unconditionalJump);
+        Instruction unconditionalJump = null;
+        if (ctx.ELSE() != null)
+        {
+            unconditionalJump = new Instruction(InstructionCode.JUMP, Instruction.TO_DEFINE);
+            this.instructions.add(unconditionalJump);
+        }
+
         jump.backPatch(this.instructions.size());
-        if(ctx.ELSE() != null)
+        if (unconditionalJump != null) //The presence of an unconditionalJump signals that there is an else block
+        {
             this.visit(ctx.instruction(1));
-        unconditionalJump.backPatch(this.instructions.size());
+            unconditionalJump.backPatch(this.instructions.size());
+        }
         return null;
     }
 
@@ -362,8 +369,12 @@ public class solCompiler extends SolBaseVisitor<Void>
     @Override
     public Void visitProgram(SolParser.ProgramContext ctx)
     {
-        for(SolParser.DeclarationContext declaration : ctx.declaration())
+        Instruction globalAlloc = new Instruction(InstructionCode.GALLOC, Instruction.TO_DEFINE);
+        this.instructions.add(globalAlloc);
+        for (SolParser.DeclarationContext declaration : ctx.declaration())
             this.visit(declaration);
+        globalAlloc.backPatch(this.variableIndices.size());
+
         for (SolParser.InstructionContext instruction : ctx.instruction())
             this.visit(instruction);
         this.instructions.add(new Instruction(InstructionCode.HALT));
@@ -406,6 +417,7 @@ public class solCompiler extends SolBaseVisitor<Void>
                     break;
                 case NO_TASM_FILE_FLAG:
                     this.generateTasmFile = false;
+                    break;
                 default:
                     RuntimeError.dispatchError("Invalid flag '" + args[i] + "'");
             }
@@ -452,7 +464,7 @@ public class solCompiler extends SolBaseVisitor<Void>
     private void semanticCheck()
     {
         solSemanticChecker semanticChecker = new solSemanticChecker(this.reporter);
-        semanticChecker.checkSemantics(this.tree);
+        semanticChecker.semanticCheck(this.tree);
         this.annotatedTypes = semanticChecker.getAnnotatedTypes();
     }
 
@@ -575,7 +587,8 @@ public class solCompiler extends SolBaseVisitor<Void>
         for (Instruction instruction : this.instructions)
         {
             InstructionCode code = instruction.getInstruction();
-            if (code == InstructionCode.JUMP || code == InstructionCode.JUMPT || code == InstructionCode.JUMPF) {
+            if (code == InstructionCode.JUMP || code == InstructionCode.JUMPT || code == InstructionCode.JUMPF)
+            {
                 String label = "_l" + instruction.getOperand() + ":";
                 if (!tasmCode[instruction.getOperand()].contains(label))
                     tasmCode[instruction.getOperand()] = tasmCode[instruction.getOperand()].replaceFirst("\t", label);

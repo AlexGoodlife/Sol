@@ -376,7 +376,7 @@ public class solSemanticChecker extends SolBaseListener
             this.reporter.reportError(ctx, OUT_OF_LOOP_BREAK_ERROR_MESSAGE);
     }
 
-    public void checkSemantics(ParseTree tree)
+    public void semanticCheck(ParseTree tree)
     {
         ParseTreeWalker walker = new ParseTreeWalker();
         walker.walk(this, tree);
