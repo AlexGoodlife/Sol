@@ -544,7 +544,7 @@ public class solCompiler extends SolBaseVisitor<Void>
 
     private void writeTasmFile() throws IOException
     {
-        FileWriter tasmFile = new FileWriter(this.sourceFileName.replaceAll("\\.sol", ".tasm"));
+        FileWriter tasmFile = new FileWriter(this.byteCodesFileName.replaceAll("\\.tbc", ".tasm"));
         String[] tasmCode = this.generateTasmCode();
         for (String line : tasmCode)
             tasmFile.write(line);
