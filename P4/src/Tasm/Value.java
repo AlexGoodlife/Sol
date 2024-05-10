@@ -41,6 +41,19 @@ public class Value
         return this.value;
     }
 
+    public static Class<?> typeOf(String type)
+    {
+        switch (type)
+        {
+            case "int" -> { return Integer.class; }
+            case "real" -> { return Double.class; }
+            case "string" -> { return String.class; }
+            case "bool" -> { return Boolean.class; }
+            case "void" -> { return Void.class; }
+            default -> throw new InternalError("Shouldn't happen...");
+        }
+    }
+
     @Override
     public String toString()
     {
@@ -62,17 +75,5 @@ public class Value
     public int hashCode()
     {
         return Objects.hashCode(this.value);
-    }
-
-    public static Class<?> typeOf(String type){
-        switch (type)
-        {
-            case "int" -> {return Integer.class;}
-            case "real" -> {return Double.class;}
-            case "string" -> {return String.class;}
-            case "bool" -> {return Boolean.class;}
-            case "void" -> {return Void.class;}
-            default -> throw new InternalError("Shouldn't happen...");
-        }
     }
 }

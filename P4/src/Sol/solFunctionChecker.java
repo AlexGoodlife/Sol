@@ -3,41 +3,99 @@ package Sol;
 import ErrorUtils.ErrorReporter;
 import Tasm.Value;
 import antlrSol.*;
+import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.tree.*;
 
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 
 public class solFunctionChecker extends SolBaseListener
 {
     private final ErrorReporter reporter;
-    private final HashMap<String, FunctionInfo> functions;
+    private final HashSet<Function> functions;
+    private final ParseTreeProperty<Boolean> annotatedReturns;
+    private boolean hasMain;
 
     public solFunctionChecker(ErrorReporter reporter)
     {
         this.reporter = reporter;
-        this.functions = new HashMap<>();
+        this.functions = new HashSet<>();
+        this.annotatedReturns = new ParseTreeProperty<>();
+        this.hasMain = false;
     }
 
-    public void exitFunctionDeclaration(SolParser.FunctionDeclarationContext ctx){
+    public HashSet<Function> getFunctions()
+    {
+        return this.functions;
+    }
+
+    @Override
+    public void enterFunctionDeclaration(SolParser.FunctionDeclarationContext ctx)
+    {
         String id = ctx.IDENTIFIER().getText();
         Class<?> returnType = Value.typeOf(ctx.type.getText());
         List<Class<?>> argTypes = new ArrayList<>();
-        ctx.argument().forEach((T) ->{
-            argTypes.add(Value.typeOf(T.type.getText()));
-        });
-        FunctionInfo info = new FunctionInfo(id,returnType,argTypes);
-        this.functions.put(id, info);
+        ctx.argument().forEach((T) -> argTypes.add(Value.typeOf(T.type.getText())));
+        if (id.equals("main") && returnType == Void.class && argTypes.isEmpty())
+            this.hasMain = true;
+        Function function = new Function(id, returnType, argTypes);
+        this.functions.add(function);
     }
 
-    public void exitIf(SolParser.IfContext ctx){
+    @Override
+    public void enterEveryRule(ParserRuleContext ctx)
+    {
+        if (ctx instanceof SolParser.InstructionContext)
+            this.annotatedReturns.put(ctx, ctx instanceof SolParser.ReturnContext);
+    }
 
+    @Override
+    public void exitScope(SolParser.ScopeContext ctx)
+    {
+        boolean hasReturn = this.annotatedReturns.get(ctx);
+        for (SolParser.InstructionContext instruction : ctx.instruction())
+        {
+            hasReturn |= this.annotatedReturns.get(instruction);
+            if (hasReturn)
+                break;
+        }
+        this.annotatedReturns.put(ctx, hasReturn);
+    }
+
+    @Override
+    public void exitBlock(SolParser.BlockContext ctx)
+    {
+        this.annotatedReturns.put(ctx, this.annotatedReturns.get(ctx.scope()));
+    }
+
+    @Override
+    public void exitIf(SolParser.IfContext ctx)
+    {
+        if (ctx.ELSE() == null)
+            return;
+
+        this.annotatedReturns.put(ctx, this.annotatedReturns.get(ctx.instruction(0)) && this.annotatedReturns.get(ctx.instruction(1)));
+    }
+
+    @Override
+    public void exitFunctionDeclaration(SolParser.FunctionDeclarationContext ctx)
+    {
+        if (!this.annotatedReturns.get(ctx.scope()))
+            this.reporter.reportError(ctx, "Function might not always reach a return instruction");
     }
 
     public void functionCheck(ParseTree tree)
     {
         ParseTreeWalker walker = new ParseTreeWalker();
         walker.walk(this, tree);
+
+        if (!this.hasMain)
+            this.reporter.reportError(null, "Program doesn't include a main function");
+    }
+
+    public static void main(String[] args)
+    {
+
     }
 }
