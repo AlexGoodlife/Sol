@@ -398,7 +398,8 @@ public class solSemanticChecker extends SolBaseListener
     }
 
 
-    private void checkFunctionArguments(ParserRuleContext ctx, Function function, List<SolParser.ExprContext> expr, int providedArgs, int expectedArgs){
+    private void checkFunctionArguments(ParserRuleContext ctx, Function function, List<SolParser.ExprContext> expr, int providedArgs){
+        int expectedArgs = function.getArgTypes().size();
         if(providedArgs != expectedArgs){
             this.reporter.reportError(ctx, "Expected " + expectedArgs + "Arguments but got " + providedArgs);
             return;
@@ -422,8 +423,7 @@ public class solSemanticChecker extends SolBaseListener
             return;
         }
         int providedArgs = ctx.expr().size();
-        int expectedArgs = function.getArgTypes().size();
-        checkFunctionArguments(ctx,function,ctx.expr(),providedArgs,expectedArgs);
+        checkFunctionArguments(ctx,function,ctx.expr(),providedArgs);
         this.annotatedTypes.put(ctx,function.getReturnType());
     }
 
@@ -435,8 +435,7 @@ public class solSemanticChecker extends SolBaseListener
             return;
         }
         int providedArgs = ctx.expr().size();
-        int expectedArgs = function.getArgTypes().size();
-        checkFunctionArguments(ctx,function,ctx.expr(),providedArgs,expectedArgs);
+        checkFunctionArguments(ctx,function,ctx.expr(),providedArgs);
         this.annotatedTypes.put(ctx,function.getReturnType());
     }
 
