@@ -1,6 +1,6 @@
 grammar Sol;
 
-program:    declaration* instruction+ EOF
+program:    declaration* functionDeclaration+ EOF
             ;
 
 declaration:    type=(INT_T|DOUBLE_T|STRING_T|BOOLEAN_T) declarationAssign (',' declarationAssign)* EOL
@@ -9,32 +9,44 @@ declaration:    type=(INT_T|DOUBLE_T|STRING_T|BOOLEAN_T) declarationAssign (',' 
 declarationAssign:  IDENTIFIER ('=' expr)?
                     ;
 
-instruction:    PRINT expr EOL                                      #Print
-                | assign EOL                                        #Assignment
-                | BEGIN instruction* END                            #Block
-                | WHILE expr DO instruction                         #While
-                | FOR assign TO expr DO instruction                 #For
-                | IF expr THEN instruction (ELSE instruction)?      #If
-                | EOL                                               #Empty
-                | BREAK EOL                                         #Break
+functionDeclaration:    type=(INT_T|DOUBLE_T|STRING_T|BOOLEAN_T|VOID) IDENTIFIER LPAREN (argument (',' argument)*)? RPAREN scope
+                        ;
+
+argument:   type=(INT_T|DOUBLE_T|STRING_T|BOOLEAN_T) IDENTIFIER
+            ;
+
+scope:  BEGIN declaration* instruction* END
+                ;
+
+instruction:    PRINT expr EOL                                          #Print
+                | assign EOL                                            #Assignment
+                | scope                                                 #Block
+                | WHILE expr DO instruction                             #While
+                | FOR assign TO expr DO instruction                     #For
+                | IF expr THEN instruction (ELSE instruction)?          #If
+                | EOL                                                   #Empty
+                | BREAK EOL                                             #Break
+                | IDENTIFIER LPAREN (expr (',' expr)*)? RPAREN EOL      #VoidFunctionCall
+                | RETURN expr? EOL                                      #Return
                 ;
 
 assign: IDENTIFIER '=' expr
         ;
 
-expr:   LPAREN expr RPAREN                  #Parentheses
-        | op=(MINUS|NOT) expr               #Negation
-        | expr op=(MULT|DIV|MOD) expr 	    #MultDivMod
-        | expr op=(ADD|MINUS) expr          #AddSub
-        | expr op=(LT|GT|LET|GET) expr      #Relational
-        | expr op=(EQ|NEQ) expr             #Equality
-        | expr AND expr                     #And
-        | expr OR expr                      #Or
-        | INT        		                #Int
-        | DOUBLE        		            #Double
-        | STRING        		            #String
-        | BOOLEAN        		            #Boolean
-        | IDENTIFIER                        #Identifier
+expr:   LPAREN expr RPAREN                                      #Parentheses
+        | op=(MINUS|NOT) expr                                   #Negation
+        | expr op=(MULT|DIV|MOD) expr 	                        #MultDivMod
+        | expr op=(ADD|MINUS) expr                              #AddSub
+        | expr op=(LT|GT|LET|GET) expr                          #Relational
+        | expr op=(EQ|NEQ) expr                                 #Equality
+        | expr AND expr                                         #And
+        | expr OR expr                                          #Or
+        | INT        		                                    #Int
+        | DOUBLE        		                                #Double
+        | STRING        		                                #String
+        | BOOLEAN        		                                #Boolean
+        | IDENTIFIER                                            #Identifier
+        | IDENTIFIER LPAREN (expr (',' expr)*)? RPAREN          #NonVoidFunctionCall
         ;
 
 //Language types
@@ -61,6 +73,8 @@ IF: 'if';
 THEN: 'then';
 ELSE: 'else';
 BREAK: 'break';
+VOID: 'void';
+RETURN: 'return';
 
 //Operations
 MULT: '*';
