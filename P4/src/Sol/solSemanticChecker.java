@@ -6,6 +6,7 @@ import antlrSol.*;
 import org.antlr.v4.runtime.tree.*;
 
 import java.util.HashMap;
+import java.util.TreeMap;
 
 public class solSemanticChecker extends SolBaseListener
 {
@@ -18,6 +19,7 @@ public class solSemanticChecker extends SolBaseListener
     private final ParseTreeProperty<Class<?>> annotatedTypes;
     private final HashMap<String, Class<?>> variableTypes;
     private int nestedLoopCount;
+
 
     public solSemanticChecker(ErrorReporter reporter)
     {
@@ -372,6 +374,7 @@ public class solSemanticChecker extends SolBaseListener
 
     public void semanticCheck(ParseTree tree)
     {
+        solFunctionChecker funcChecker = new solFunctionChecker(this.reporter);
         ParseTreeWalker walker = new ParseTreeWalker();
         walker.walk(this, tree);
     }

@@ -3,9 +3,16 @@ package Sol;
 import ErrorUtils.ErrorReporter;
 import Tasm.Value;
 import antlrSol.*;
+import org.antlr.v4.runtime.CharStream;
+import org.antlr.v4.runtime.CharStreams;
+import org.antlr.v4.runtime.CommonTokenStream;
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.tree.*;
 
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.List;
@@ -46,7 +53,7 @@ public class solFunctionChecker extends SolBaseListener
     @Override
     public void enterEveryRule(ParserRuleContext ctx)
     {
-        if (ctx instanceof SolParser.InstructionContext)
+        if (ctx instanceof SolParser.InstructionContext || ctx instanceof SolParser.ScopeContext)
             this.annotatedReturns.put(ctx, ctx instanceof SolParser.ReturnContext);
     }
 
@@ -97,5 +104,19 @@ public class solFunctionChecker extends SolBaseListener
     public static void main(String[] args)
     {
 
+        InputStream inputStream = null;
+        try {
+            ErrorReporter rep = new ErrorReporter();
+            solFunctionChecker checker = new solFunctionChecker(rep);
+            inputStream = new FileInputStream("inputs/returnTest.sol");
+            CharStream input = CharStreams.fromStream(inputStream);
+            SolLexer lexer = new SolLexer(input);
+            CommonTokenStream tokens = new CommonTokenStream(lexer);
+            ParseTree tree = new SolParser(tokens).program();
+            checker.functionCheck(tree);
+            System.out.println(rep);
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 }
