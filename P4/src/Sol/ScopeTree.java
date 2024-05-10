@@ -1,6 +1,5 @@
 package Sol;
 
-import org.antlr.v4.runtime.tree.ParseTree;
 import org.antlr.v4.runtime.tree.Tree;
 
 import java.util.ArrayList;
@@ -39,8 +38,8 @@ public class ScopeTree implements Tree {
     public Class<?> getVariable(String identifier){
         return getVariableRecursive(this,identifier);
     }
-    public Class<?> putVariable(String identifier, Class<?> type){
-        return this.variables.put(identifier,type);
+    public void putVariable(String identifier, Class<?> type){
+        this.variables.put(identifier, type);
     }
 
     public boolean containsVariableLocal(String identifier){
