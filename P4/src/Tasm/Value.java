@@ -63,4 +63,16 @@ public class Value
     {
         return Objects.hashCode(this.value);
     }
+
+    public static Class<?> typeOf(String type){
+        switch (type)
+        {
+            case "int" -> {return Integer.class;}
+            case "real" -> {return Double.class;}
+            case "string" -> {return String.class;}
+            case "bool" -> {return Boolean.class;}
+            case "void" -> {return Void.class;}
+            default -> throw new InternalError("Shouldn't happen...");
+        }
+    }
 }

@@ -1,6 +1,7 @@
 package Sol;
 
 import ErrorUtils.ErrorReporter;
+import Tasm.Value;
 import antlrSol.*;
 import org.antlr.v4.runtime.tree.*;
 
@@ -254,14 +255,7 @@ public class solSemanticChecker extends SolBaseListener
     @Override
     public void enterDeclaration(SolParser.DeclarationContext ctx)
     {
-        switch (ctx.type.getText())
-        {
-            case "int" -> this.annotatedTypes.put(ctx, Integer.class);
-            case "real" -> this.annotatedTypes.put(ctx, Double.class);
-            case "string" -> this.annotatedTypes.put(ctx, String.class);
-            case "bool" -> this.annotatedTypes.put(ctx, Boolean.class);
-            default -> throw new InternalError("Shouldn't happen...");
-        }
+        this.annotatedTypes.put(ctx, Value.typeOf(ctx.type.getText()));
     }
 
     @Override

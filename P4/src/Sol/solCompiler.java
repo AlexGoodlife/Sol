@@ -375,8 +375,8 @@ public class solCompiler extends SolBaseVisitor<Void>
             this.visit(declaration);
         globalAlloc.backPatch(this.variableIndices.size());
 
-        for (SolParser.InstructionContext instruction : ctx.instruction())
-            this.visit(instruction);
+        for (SolParser.FunctionDeclarationContext func : ctx.functionDeclaration())
+            this.visit(func);
         this.instructions.add(new Instruction(Instruction.Code.HALT));
         return null;
     }
