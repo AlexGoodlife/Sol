@@ -14,25 +14,27 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 
 public class solFunctionChecker extends SolBaseListener
 {
     private final ErrorReporter reporter;
-    private final HashSet<Function> functions;
+    private final HashMap<String,Function> functions;
     private final ParseTreeProperty<Boolean> annotatedReturns;
     private boolean hasMain;
+
 
     public solFunctionChecker(ErrorReporter reporter)
     {
         this.reporter = reporter;
-        this.functions = new HashSet<>();
+        this.functions = new HashMap<>();
         this.annotatedReturns = new ParseTreeProperty<>();
         this.hasMain = false;
     }
 
-    public HashSet<Function> getFunctions()
+    public HashMap<String,Function> getFunctions()
     {
         return this.functions;
     }
@@ -46,8 +48,8 @@ public class solFunctionChecker extends SolBaseListener
         ctx.argument().forEach((T) -> argTypes.add(Value.typeOf(T.type.getText())));
         if (id.equals("main") && returnType == Void.class && argTypes.isEmpty())
             this.hasMain = true;
-        Function function = new Function(id, returnType, argTypes);
-        this.functions.add(function);
+        Function function = new Function(returnType, argTypes);
+        this.functions.put(id,function);
     }
 
     @Override

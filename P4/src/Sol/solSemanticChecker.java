@@ -3,10 +3,12 @@ package Sol;
 import ErrorUtils.ErrorReporter;
 import Tasm.Value;
 import antlrSol.*;
+import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.tree.*;
 
 import java.util.HashMap;
-import java.util.TreeMap;
+import java.util.HashSet;
+import java.util.List;
 
 public class solSemanticChecker extends SolBaseListener
 {
@@ -15,18 +17,25 @@ public class solSemanticChecker extends SolBaseListener
     private static final String UNDECLARED_VAR_ERROR_MESSAGE = "Undeclared variable in";
     private static final String OUT_OF_LOOP_BREAK_ERROR_MESSAGE = "Breaking out of loop in";
 
+    private static final String INVALID_RETURN_TYPE_MESSAGE = "Invalid return type for function";
+
     private final ErrorReporter reporter;
     private final ParseTreeProperty<Class<?>> annotatedTypes;
-    private final HashMap<String, Class<?>> variableTypes;
+    //private final HashMap<String, Class<?>> variableTypes;
+
+    private ScopeTree scope;
     private int nestedLoopCount;
+    private Class<?> currentFunctionReturnType;
+    private HashMap<String,Function> functions;
 
 
     public solSemanticChecker(ErrorReporter reporter)
     {
         this.reporter = reporter;
         this.annotatedTypes = new ParseTreeProperty<>();
-        this.variableTypes = new HashMap<>();
+        //this.variableTypes = new HashMap<>();
         this.nestedLoopCount = 0;
+        this.scope = new ScopeTree();
     }
 
     public ParseTreeProperty<Class<?>> getAnnotatedTypes()
@@ -61,7 +70,8 @@ public class solSemanticChecker extends SolBaseListener
     @Override
     public void exitIdentifier(SolParser.IdentifierContext ctx)
     {
-        Class<?> variableType = this.variableTypes.get(ctx.IDENTIFIER().getText());
+        // Class<?> variableType = this.variableTypes.get(ctx.IDENTIFIER().getText());
+        Class<?> variableType = this.scope.getVariable(ctx.IDENTIFIER().getText());
         if (variableType != null)
             this.annotatedTypes.put(ctx, variableType);
         else
@@ -267,7 +277,7 @@ public class solSemanticChecker extends SolBaseListener
             return;
 
         String variableName = ctx.IDENTIFIER().getText();
-        if (this.variableTypes.containsKey(variableName))
+        if (this.scope.containsVariableLocal(variableName)) // Variable already declared in local scope
         {
             this.reporter.reportError(ctx, DECLARED_VAR_ERROR_MESSAGE);
             return;
@@ -283,7 +293,7 @@ public class solSemanticChecker extends SolBaseListener
             if (exprType != null && !compatibleTypes(variableType, exprType))
                 this.reporter.reportError(ctx, TYPE_MISMATCH_ERROR_MESSAGE);
         }
-        this.variableTypes.put(variableName, variableType);
+        this.scope.putVariable(variableName,variableType);
     }
 
     private static boolean compatibleTypes(Class<?> type1, Class<?> type2)
@@ -300,13 +310,13 @@ public class solSemanticChecker extends SolBaseListener
             return;
 
         String variableName = ctx.IDENTIFIER().getText();
-        if (!this.variableTypes.containsKey(variableName))
+        if (!this.scope.containsVariable(variableName))
         {
             this.reporter.reportError(ctx, UNDECLARED_VAR_ERROR_MESSAGE);
             return;
         }
 
-        Class<?> variableType = this.variableTypes.get(variableName);
+        Class<?> variableType = this.scope.getVariable(variableName);
         Class<?> exprType = this.annotatedTypes.get(ctx.expr());
         if (exprType == null)
             return;
@@ -372,9 +382,90 @@ public class solSemanticChecker extends SolBaseListener
             this.reporter.reportError(ctx, OUT_OF_LOOP_BREAK_ERROR_MESSAGE);
     }
 
+    @Override
+    public void enterFunctionDeclaration(SolParser.FunctionDeclarationContext ctx){
+        // MAJOR HACK INCOMING OHH MY GOOOOD
+        this.currentFunctionReturnType = this.functions.get(ctx.IDENTIFIER().getText()).getReturnType();
+    }
+
+    @Override
+    public void exitReturn(SolParser.ReturnContext ctx){
+        // MAJOR HACK INCOMING OHH MY GOOOOD
+        Class<?> returnType = this.annotatedTypes.get(ctx.expr());
+        if(!returnType.equals(this.currentFunctionReturnType)){
+            this.reporter.reportError(ctx, INVALID_RETURN_TYPE_MESSAGE + " Expected: " + this.currentFunctionReturnType + "Got: " +returnType );
+        }
+    }
+
+
+    private void checkFunctionArguments(ParserRuleContext ctx, Function function, List<SolParser.ExprContext> expr, int providedArgs, int expectedArgs){
+        if(providedArgs != expectedArgs){
+            this.reporter.reportError(ctx, "Expected " + expectedArgs + "Arguments but got " + providedArgs);
+            return;
+        }
+        List<Class<?>> argTypes = function.getArgTypes();
+        for(int i = 0; i < expectedArgs; i++){
+            Class<?> type = this.annotatedTypes.get(expr.get(i));
+            if(type == null){ // Something went very wrong we should stop now
+                throw new InternalError("Error annotating failed to return a type");
+            }
+            if(!type.equals(argTypes.get(i))){
+                this.reporter.reportError(expr.get(i), "Mismatched argument type expected: " + argTypes.get(i) + "but got: " + type);
+            }
+        }
+    }
+    @Override
+    public void exitVoidFunctionCall(SolParser.VoidFunctionCallContext ctx){
+        Function function = this.functions.get(ctx.IDENTIFIER().getText());
+        if(function == null){
+            this.reporter.reportError(ctx, "Call to unknown function : " + ctx.IDENTIFIER().getText());
+            return;
+        }
+        int providedArgs = ctx.expr().size();
+        int expectedArgs = function.getArgTypes().size();
+        checkFunctionArguments(ctx,function,ctx.expr(),providedArgs,expectedArgs);
+        this.annotatedTypes.put(ctx,function.getReturnType());
+    }
+
+    @Override
+    public void exitNonVoidFunctionCall(SolParser.NonVoidFunctionCallContext ctx){
+        Function function = this.functions.get(ctx.IDENTIFIER().getText());
+        if(function == null){
+            this.reporter.reportError(ctx, "Call to unknown function : " + ctx.IDENTIFIER().getText());
+            return;
+        }
+        int providedArgs = ctx.expr().size();
+        int expectedArgs = function.getArgTypes().size();
+        checkFunctionArguments(ctx,function,ctx.expr(),providedArgs,expectedArgs);
+        this.annotatedTypes.put(ctx,function.getReturnType());
+    }
+
+    @Override
+    public void enterScope(SolParser.ScopeContext ctx){
+        this.scope.addChild(new ScopeTree(this.scope));
+        this.scope = this.scope.getRightmostChild();
+        ParserRuleContext parent = ctx.getParent();
+        if(parent instanceof SolParser.FunctionDeclarationContext){ // Because we are using a listener we have to add the argument types after the created scope
+           ((SolParser.FunctionDeclarationContext) parent).argument().forEach(
+               (arg) -> {
+                   Class<?> type = Value.typeOf(arg.type.getText());
+                   this.scope.putVariable(arg.IDENTIFIER().getText(), type);
+                   this.annotatedTypes.put(arg,type); // Because this is a variable assignment we also need to annotate the node
+               }
+           );
+        }
+    }
+
+    @Override
+    public void exitScope(SolParser.ScopeContext ctx){
+        this.scope = (ScopeTree) this.scope.getParent(); // Back track on our scopes when moving because global scope is not classified as such we never go beyond root
+    }
+
     public void semanticCheck(ParseTree tree)
     {
         solFunctionChecker funcChecker = new solFunctionChecker(this.reporter);
+        funcChecker.functionCheck(tree);
+        this.functions = funcChecker.getFunctions();
         ParseTreeWalker walker = new ParseTreeWalker();
         walker.walk(this, tree);
     }
