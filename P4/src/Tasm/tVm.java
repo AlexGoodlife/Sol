@@ -271,6 +271,8 @@ public class tVm
     {
         if (this.callCount == 0)
             this.genericError(instruction, "Can't return out of non existent call frame");
+        if (instruction.getOperand() < 0)
+            this.genericError(instruction, "Can't return from call frame with negative amount of arguments");
         int minimumSize = instruction.getOperand() + 2;
         minimumSize = instruction.getInstruction() == Instruction.Code.RETVAL ? minimumSize + 1 : minimumSize;
         if (this.executionStack.size() < minimumSize)
@@ -373,7 +375,7 @@ public class tVm
                 case IMULT -> this.executionStack.push(new Value(leftInt * rightInt));
                 case IDIV -> {
                     if (rightInt == 0)
-                        this.genericError(instruction, "Division by 0 error");
+                        this.divisionByZeroError(instruction);
                     this.executionStack.push(new Value(leftInt / rightInt));
                 }
                 case IMOD -> this.executionStack.push(new Value(leftInt % rightInt));
@@ -396,7 +398,7 @@ public class tVm
                 case DMULT -> this.executionStack.push(new Value(leftDouble * rightDouble));
                 case DDIV -> {
                     if (rightDouble == 0)
-                        this.genericError(instruction, "Division by 0 error");
+                        this.divisionByZeroError(instruction);
                     this.executionStack.push(new Value(leftDouble / rightDouble));
                 }
                 case DEQ -> this.executionStack.push(new Value(leftDouble.equals(rightDouble)));
@@ -469,9 +471,15 @@ public class tVm
         RuntimeError.dispatchError(message);
     }
 
+    private void divisionByZeroError(Instruction instruction)
+    {
+        String message = this.instructionPointer + ":0 " + "Division by 0 on '" + instruction + "'";
+        RuntimeError.dispatchError(message);
+    }
+
     private void genericError(Instruction instruction, String errorMessage)
     {
-        String message = this.instructionPointer + ":0 '" + instruction + "' "  + errorMessage;
+        String message = this.instructionPointer + ":0 " + errorMessage + " '" + instruction + "'";
         RuntimeError.dispatchError(message);
     }
 
