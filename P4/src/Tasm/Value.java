@@ -6,7 +6,6 @@ import java.util.Objects;
 public class Value
 {
     private static final Class<?>[] SUPPORTED_TYPES = {Integer.class, Double.class, String.class, Boolean.class};
-
     private final Object value;
 
     public Value(Object value)
@@ -52,6 +51,25 @@ public class Value
             case "void" -> { return Void.class; }
             default -> throw new InternalError("Shouldn't happen...");
         }
+    }
+
+    public static String typeString(Class<?> type){
+        if (type.equals(Integer.class)) {
+            return "int";
+        }
+        if (type.equals(Double.class)) {
+            return "real";
+        }
+        if (type.equals(String.class)) {
+            return "string";
+        }
+        if (type.equals(Boolean.class)) {
+            return "bool";
+        }
+        if (type.equals(Void.class)) {
+            return "void";
+        }
+        return "nil";
     }
 
     @Override

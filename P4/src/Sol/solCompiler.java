@@ -388,8 +388,8 @@ public class solCompiler extends SolBaseVisitor<Void>
         this.semanticCheck();
         if (this.hasNoErrors())
         {
-            this.generateInstructions();
-            this.writeByteCodes();
+            //this.generateInstructions();
+            //this.writeByteCodes();
         }
         else
             this.unsuccessfulCompileError();

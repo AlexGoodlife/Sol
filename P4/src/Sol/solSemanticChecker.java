@@ -391,9 +391,17 @@ public class solSemanticChecker extends SolBaseListener
     @Override
     public void exitReturn(SolParser.ReturnContext ctx){
         // MAJOR HACK INCOMING OHH MY GOOOOD
-        Class<?> returnType = this.annotatedTypes.get(ctx.expr());
-        if(!returnType.equals(this.currentFunctionReturnType)){
-            this.reporter.reportError(ctx, INVALID_RETURN_TYPE_MESSAGE + " Expected: " + this.currentFunctionReturnType + "Got: " +returnType );
+        Class<?> cachedType = this.annotatedTypes.get(ctx.expr());
+        Class<?> returnType = cachedType != null ? cachedType : Void.class;
+        if(!compatibleTypes(returnType,this.currentFunctionReturnType)){
+            this.reporter.reportError(
+                ctx,
+        INVALID_RETURN_TYPE_MESSAGE +
+                ", Expected: " +
+                Value.typeString(this.currentFunctionReturnType) +
+                " but got: " +
+                Value.typeString(returnType)
+            );
         }
     }
 
@@ -411,7 +419,13 @@ public class solSemanticChecker extends SolBaseListener
                 throw new InternalError("Error annotating failed to return a type");
             }
             if(!type.equals(argTypes.get(i))){
-                this.reporter.reportError(expr.get(i), "Mismatched argument type expected: " + argTypes.get(i) + "but got: " + type);
+                this.reporter.reportError(
+                    expr.get(i),
+            "Mismatched argument type expected: " +
+                    Value.typeString(argTypes.get(i)) +
+                    "but got: " +
+                    Value.typeString(type)
+                );
             }
         }
     }
