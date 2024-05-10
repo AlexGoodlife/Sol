@@ -1,4 +1,4 @@
-// Generated from C:/Users/Acer/Desktop/Programations/cop_projeto/P3/src/Sol.g4 by ANTLR 4.13.1
+// Generated from /home/compl3x/Programations/cop_projeto/P4/src/Sol.g4 by ANTLR 4.13.1
 package antlrSol;
 
 import org.antlr.v4.runtime.ParserRuleContext;
@@ -48,6 +48,42 @@ public class SolBaseListener implements SolListener {
 	 * <p>The default implementation does nothing.</p>
 	 */
 	@Override public void exitDeclarationAssign(SolParser.DeclarationAssignContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void enterFunctionDeclaration(SolParser.FunctionDeclarationContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitFunctionDeclaration(SolParser.FunctionDeclarationContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void enterArgument(SolParser.ArgumentContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitArgument(SolParser.ArgumentContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void enterScope(SolParser.ScopeContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitScope(SolParser.ScopeContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *
@@ -149,6 +185,30 @@ public class SolBaseListener implements SolListener {
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
+	@Override public void enterVoidFunctionCall(SolParser.VoidFunctionCallContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitVoidFunctionCall(SolParser.VoidFunctionCallContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void enterReturn(SolParser.ReturnContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitReturn(SolParser.ReturnContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
 	@Override public void enterAssign(SolParser.AssignContext ctx) { }
 	/**
 	 * {@inheritDoc}
@@ -192,6 +252,18 @@ public class SolBaseListener implements SolListener {
 	 * <p>The default implementation does nothing.</p>
 	 */
 	@Override public void exitAddSub(SolParser.AddSubContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void enterNonVoidFunctionCall(SolParser.NonVoidFunctionCallContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitNonVoidFunctionCall(SolParser.NonVoidFunctionCallContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *

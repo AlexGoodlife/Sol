@@ -1,4 +1,4 @@
-// Generated from C:/Users/Acer/Desktop/Programations/cop_projeto/P3/src/Sol.g4 by ANTLR 4.13.1
+// Generated from /home/compl3x/Programations/cop_projeto/P4/src/Sol.g4 by ANTLR 4.13.1
 package antlrSol;
 import org.antlr.v4.runtime.tree.ParseTreeListener;
 
@@ -37,6 +37,36 @@ public interface SolListener extends ParseTreeListener {
 	 * @param ctx the parse tree
 	 */
 	void exitDeclarationAssign(SolParser.DeclarationAssignContext ctx);
+	/**
+	 * Enter a parse tree produced by {@link SolParser#functionDeclaration}.
+	 * @param ctx the parse tree
+	 */
+	void enterFunctionDeclaration(SolParser.FunctionDeclarationContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link SolParser#functionDeclaration}.
+	 * @param ctx the parse tree
+	 */
+	void exitFunctionDeclaration(SolParser.FunctionDeclarationContext ctx);
+	/**
+	 * Enter a parse tree produced by {@link SolParser#argument}.
+	 * @param ctx the parse tree
+	 */
+	void enterArgument(SolParser.ArgumentContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link SolParser#argument}.
+	 * @param ctx the parse tree
+	 */
+	void exitArgument(SolParser.ArgumentContext ctx);
+	/**
+	 * Enter a parse tree produced by {@link SolParser#scope}.
+	 * @param ctx the parse tree
+	 */
+	void enterScope(SolParser.ScopeContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link SolParser#scope}.
+	 * @param ctx the parse tree
+	 */
+	void exitScope(SolParser.ScopeContext ctx);
 	/**
 	 * Enter a parse tree produced by the {@code Print}
 	 * labeled alternative in {@link SolParser#instruction}.
@@ -134,6 +164,30 @@ public interface SolListener extends ParseTreeListener {
 	 */
 	void exitBreak(SolParser.BreakContext ctx);
 	/**
+	 * Enter a parse tree produced by the {@code VoidFunctionCall}
+	 * labeled alternative in {@link SolParser#instruction}.
+	 * @param ctx the parse tree
+	 */
+	void enterVoidFunctionCall(SolParser.VoidFunctionCallContext ctx);
+	/**
+	 * Exit a parse tree produced by the {@code VoidFunctionCall}
+	 * labeled alternative in {@link SolParser#instruction}.
+	 * @param ctx the parse tree
+	 */
+	void exitVoidFunctionCall(SolParser.VoidFunctionCallContext ctx);
+	/**
+	 * Enter a parse tree produced by the {@code Return}
+	 * labeled alternative in {@link SolParser#instruction}.
+	 * @param ctx the parse tree
+	 */
+	void enterReturn(SolParser.ReturnContext ctx);
+	/**
+	 * Exit a parse tree produced by the {@code Return}
+	 * labeled alternative in {@link SolParser#instruction}.
+	 * @param ctx the parse tree
+	 */
+	void exitReturn(SolParser.ReturnContext ctx);
+	/**
 	 * Enter a parse tree produced by {@link SolParser#assign}.
 	 * @param ctx the parse tree
 	 */
@@ -179,6 +233,18 @@ public interface SolListener extends ParseTreeListener {
 	 * @param ctx the parse tree
 	 */
 	void exitAddSub(SolParser.AddSubContext ctx);
+	/**
+	 * Enter a parse tree produced by the {@code NonVoidFunctionCall}
+	 * labeled alternative in {@link SolParser#expr}.
+	 * @param ctx the parse tree
+	 */
+	void enterNonVoidFunctionCall(SolParser.NonVoidFunctionCallContext ctx);
+	/**
+	 * Exit a parse tree produced by the {@code NonVoidFunctionCall}
+	 * labeled alternative in {@link SolParser#expr}.
+	 * @param ctx the parse tree
+	 */
+	void exitNonVoidFunctionCall(SolParser.NonVoidFunctionCallContext ctx);
 	/**
 	 * Enter a parse tree produced by the {@code Relational}
 	 * labeled alternative in {@link SolParser#expr}.
