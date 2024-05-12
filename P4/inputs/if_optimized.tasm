@@ -1,12 +1,14 @@
 				galloc 1
 				fconst
 				gstore 0
-				gload 0
-				jumpf _l9
+				call _l5
+				halt
+_l5:			gload 0
+				jumpf _l11
 				sconst "AMERICA YA :D"
 				sprint
 				sconst "Hallo :D"
 				sprint
-_l9:			sconst "Bye bye"
+_l11:			sconst "Bye bye"
 				sprint
-				halt
+				ret 0

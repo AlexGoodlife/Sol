@@ -471,7 +471,7 @@ public class solSemanticChecker extends SolBaseListener
                    // this.annotatedTypes.put(arg, type); // Because this is a variable assignment we also need to annotate the node
                }
            );
-           this.scope.offset(args.size());
+           this.scope.offset(2);
         }
     }
 

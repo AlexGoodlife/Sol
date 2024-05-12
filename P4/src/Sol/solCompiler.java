@@ -421,6 +421,9 @@ public class solCompiler extends SolBaseVisitor<Void>
     @Override public Void visitScope(SolParser.ScopeContext ctx){
         this.scope = this.scopeAnnotations.get(ctx);
         int sizeBeforeVisits = this.instructions.size();
+        Instruction allocInstruction = new Instruction(Instruction.Code.LALLOC, Instruction.TO_DEFINE);
+        if(!ctx.declaration().isEmpty())
+            this.instructions.add(sizeBeforeVisits, allocInstruction);
 
         ctx.declaration().forEach(this::visit);
         ctx.instruction().forEach(this::visit);
@@ -432,7 +435,7 @@ public class solCompiler extends SolBaseVisitor<Void>
             if(ctx.getParent() instanceof  SolParser.FunctionDeclarationContext parent){
                 allocAmount = allocAmount - this.functions.get(parent.IDENTIFIER().getText()).getArgTypes().size();
             }
-            this.instructions.add(sizeBeforeVisits, new Instruction(Instruction.Code.LALLOC, allocAmount));
+            allocInstruction.backPatch(allocAmount);
         }
         this.scope = (ScopeTree) this.scope.getParent(); // return scope to previous state
        return null;

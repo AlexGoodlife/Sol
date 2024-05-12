@@ -1,0 +1,30 @@
+				call _l23
+				halt
+_l2:			lalloc 2
+				iconst 2
+				lstore 2
+				lload 2
+				lstore 3
+				lload -4
+				iconst 0
+				ieq
+				jumpf _l13
+				iconst 2
+				retval 4
+_l13:			lload -4
+				iconst 1
+				isub
+				lload -3
+				iconst 1
+				iadd
+				lload -2
+				lload -1
+				call _l2
+				retval 4
+_l23:			iconst 2
+				iconst 3
+				iconst 4
+				iconst 5
+				call _l2
+				iprint
+				ret 0
