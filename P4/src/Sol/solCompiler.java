@@ -49,6 +49,8 @@ public class solCompiler extends SolBaseVisitor<Void>
     private HashMap<String, Instruction> functionCalls;
     private HashMap<String, Function> functions;
 
+    private Function currentFunction;
+
     public solCompiler()
     {
         this.sourceFileName = DEFAULT_SOURCE_FILE_NAME;
@@ -396,11 +398,12 @@ public class solCompiler extends SolBaseVisitor<Void>
     @Override
     public Void visitProgram(SolParser.ProgramContext ctx)
     {
-        Instruction globalAlloc = new Instruction(Instruction.Code.GALLOC, Instruction.TO_DEFINE);
-        this.instructions.add(globalAlloc);
-        for (SolParser.DeclarationContext declaration : ctx.declaration())
-            this.visit(declaration);
-        globalAlloc.backPatch(this.scope.getVariableCount()); // scope is going to be root
+        if(!ctx.declaration().isEmpty()) {
+            Instruction globalAlloc = new Instruction(Instruction.Code.GALLOC, this.scope.getVariableCount());
+            this.instructions.add(globalAlloc);
+            for (SolParser.DeclarationContext declaration : ctx.declaration())
+                this.visit(declaration);
+        }
         Instruction mainCall = new Instruction(Instruction.Code.CALL, Instruction.TO_DEFINE); // we trust that it will be backpatched
         this.functionCalls.put("main", mainCall);
         this.instructions.add(mainCall);
@@ -417,26 +420,27 @@ public class solCompiler extends SolBaseVisitor<Void>
 
     @Override public Void visitScope(SolParser.ScopeContext ctx){
         this.scope = this.scopeAnnotations.get(ctx);
-        Instruction alloc = new Instruction(Instruction.Code.LALLOC, Instruction.TO_DEFINE);
-        this.instructions.add(alloc);
+        int sizeBeforeVisits = this.instructions.size();
+
         ctx.declaration().forEach(this::visit);
         ctx.instruction().forEach(this::visit);
         
-        int allocAmount = this.scope.getVariableCount();
-        
-        if(ctx.getParent() instanceof SolParser.BlockContext)
-            this.instructions.add(new Instruction(Instruction.Code.POP,this.scope.getVariableCount()));
-        
-        if(ctx.getParent() instanceof  SolParser.FunctionDeclarationContext parent){
-           allocAmount = allocAmount - this.functions.get(parent.IDENTIFIER().getText()).getArgTypes().size();
+        if(!ctx.declaration().isEmpty()){
+            int allocAmount = this.scope.getVariableCount();
+            if(ctx.getParent() instanceof SolParser.BlockContext)
+                this.instructions.add(new Instruction(Instruction.Code.POP,this.scope.getVariableCount()));
+            if(ctx.getParent() instanceof  SolParser.FunctionDeclarationContext parent){
+                allocAmount = allocAmount - this.functions.get(parent.IDENTIFIER().getText()).getArgTypes().size();
+            }
+            this.instructions.add(sizeBeforeVisits, new Instruction(Instruction.Code.LALLOC, allocAmount));
         }
-        alloc.backPatch(allocAmount);
         this.scope = (ScopeTree) this.scope.getParent(); // return scope to previous state
        return null;
     }
     
     @Override
     public Void visitFunctionDeclaration(SolParser.FunctionDeclarationContext ctx){
+        this.currentFunction = this.functions.get(ctx.IDENTIFIER().getText());
         int currentInstructionSize = this.instructions.size();
         visit(ctx.scope());
         Instruction toJump = this.functionCalls.get(ctx.IDENTIFIER().getText());
@@ -446,10 +450,25 @@ public class solCompiler extends SolBaseVisitor<Void>
         else{
             toJump.backPatch(currentInstructionSize);
         }
-        Function function = this.functions.get(ctx.IDENTIFIER().getText());
-        Instruction.Code code = function.getReturnType().equals(Void.class) ? Instruction.Code.RET : Instruction.Code.RETVAL;
-        this.instructions.add(new Instruction(code, function.getArgTypes().size()));
+        /*
+         If function is void we must implicitly return from it always, if one already exists, don't bother
+         We could get our annotated returns from the function checker, don't know if its needed
+         */
+
+        if(this.currentFunction.getReturnType().equals(Void.class) && this.instructions.get(this.instructions.size()-1).getInstruction() != Instruction.Code.RET)
+            this.instructions.add(new Instruction(Instruction.Code.RET,this.currentFunction.getArgTypes().size()));
        return null;
+    }
+
+    @Override
+    public Void visitReturn(SolParser.ReturnContext ctx){
+        // Find what function we are in, we are going to use our previous hack in the semantic checker
+        if(ctx.expr() != null){
+            visit(ctx.expr());
+        }
+        Instruction.Code code = this.currentFunction.getReturnType().equals(Void.class) ? Instruction.Code.RET : Instruction.Code.RETVAL;
+        this.instructions.add(new Instruction(code, this.currentFunction.getArgTypes().size()));
+        return null;
     }
 
     private void addFunctionJumps(String identifier){

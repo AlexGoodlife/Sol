@@ -1,22 +1,19 @@
-				galloc 0
-				call _l16
+				call _l14
 				halt
-_l3:			lalloc 0
-				lload -1
+_l2:			lload -1
 				lload -1
 				imult
 				retval 1
-_l8:			lalloc 1
+_l6:			lalloc 1
 				lload -2
 				lload -1
 				iadd
-				call _l3
+				call _l2
 				lstore 2
 				lload 2
 				retval 2
-_l16:			lalloc 0
-				iconst 3
+_l14:			iconst 3
 				iconst 2
-				call _l8
+				call _l6
 				iprint
 				ret 0
