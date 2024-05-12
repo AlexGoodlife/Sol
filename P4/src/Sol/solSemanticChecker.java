@@ -88,9 +88,9 @@ public class solSemanticChecker extends SolBaseListener
     @Override
     public void exitIdentifier(SolParser.IdentifierContext ctx)
     {
-        Class<?> variableType = this.scope.getVariable(ctx.IDENTIFIER().getText()).type();
-        if (variableType != null)
-            this.annotatedTypes.put(ctx, variableType);
+        ScopeTree.Variable var = this.scope.getVariable(ctx.IDENTIFIER().getText());
+        if (var != null)
+            this.annotatedTypes.put(ctx, var.type());
         else
             this.reporter.reportError(ctx, UNDECLARED_VAR_ERROR_MESSAGE);
     }

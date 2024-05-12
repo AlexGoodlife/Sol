@@ -9,7 +9,7 @@ _l2:			lalloc 2
 				iconst 0
 				ieq
 				jumpf _l13
-				iconst 2
+				lload -3
 				retval 4
 _l13:			lload -4
 				iconst 1

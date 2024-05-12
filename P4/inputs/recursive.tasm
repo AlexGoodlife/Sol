@@ -14,5 +14,7 @@ _l8:			lload -1
 _l13:			lalloc 1
 				iconst 2
 				call _l2
-				lstore 0
+				lstore 2
+				lload 2
+				iprint
 				ret 0

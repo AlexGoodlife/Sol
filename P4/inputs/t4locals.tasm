@@ -1,0 +1,26 @@
+				call _l2
+				halt
+_l2:			lalloc 2
+				iconst 1
+				lstore 2
+				lalloc 1
+				iconst 2
+				lstore 4
+				lalloc 2
+				iconst 3
+				lstore 5
+				lalloc 1
+				iconst 4
+				lstore 7
+				pop 1
+				iconst 5
+				lstore 6
+				pop 2
+				pop 1
+				iconst 6
+				lstore 3
+				lalloc 1
+				iconst 7
+				lstore 4
+				pop 1
+				ret 0

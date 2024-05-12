@@ -3,7 +3,7 @@ begin
     int j = 2;
     int test = j;
     if(x == 0) then
-        return 2;
+        return y;
     return block(x-1,y+1,z,l);
 end
 

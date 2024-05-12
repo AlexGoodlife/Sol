@@ -6,4 +6,5 @@ end
 void main()
 begin
     int j = recursive(2);
+    print j;
 end
