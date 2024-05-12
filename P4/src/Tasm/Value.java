@@ -53,25 +53,6 @@ public class Value
         }
     }
 
-    public static String typeString(Class<?> type){
-        if (type.equals(Integer.class)) {
-            return "int";
-        }
-        if (type.equals(Double.class)) {
-            return "real";
-        }
-        if (type.equals(String.class)) {
-            return "string";
-        }
-        if (type.equals(Boolean.class)) {
-            return "bool";
-        }
-        if (type.equals(Void.class)) {
-            return "void";
-        }
-        return "nil";
-    }
-
     @Override
     public String toString()
     {

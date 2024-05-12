@@ -13,7 +13,6 @@ public class Function
         this.argTypes = argTypes;
     }
 
-
     public Class<?> getReturnType()
     {
         return this.returnType;

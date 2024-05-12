@@ -7,7 +7,6 @@ import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.tree.*;
 
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.List;
 
 public class solSemanticChecker extends SolBaseListener
@@ -16,26 +15,25 @@ public class solSemanticChecker extends SolBaseListener
     private static final String DECLARED_VAR_ERROR_MESSAGE = "Declaring already declared variable in";
     private static final String UNDECLARED_VAR_ERROR_MESSAGE = "Undeclared variable in";
     private static final String OUT_OF_LOOP_BREAK_ERROR_MESSAGE = "Breaking out of loop in";
-
     private static final String INVALID_RETURN_TYPE_MESSAGE = "Invalid return type for function";
+    private static final String WRONG_ARGUMENT_COUNT_MESSAGE = "Function call has wrong amount of passed arguments";
+    private static final String UNDECLARED_FUNCTION_ERROR_MESSAGE = "Undeclared function in";
+    private static final String IGNORED_RETURN_VALUE_ERROR_MESSAGE = "Return value is being ignored on";
+    private static final String VOID_RETURN_VALUE_ERROR_MESSAGE = "Void function in an expression";
 
     private final ErrorReporter reporter;
     private final ParseTreeProperty<Class<?>> annotatedTypes;
-    //private final HashMap<String, Class<?>> variableTypes;
-
-    private ScopeTree scope;
-    private int nestedLoopCount;
-    private Class<?> currentFunctionReturnType;
     private HashMap<String,Function> functions;
-
+    private ScopeTree scope;
+    private Function currentFunction;
+    private int nestedLoopCount;
 
     public solSemanticChecker(ErrorReporter reporter)
     {
         this.reporter = reporter;
         this.annotatedTypes = new ParseTreeProperty<>();
-        //this.variableTypes = new HashMap<>();
-        this.nestedLoopCount = 0;
         this.scope = new ScopeTree();
+        this.nestedLoopCount = 0;
     }
 
     public ParseTreeProperty<Class<?>> getAnnotatedTypes()
@@ -70,7 +68,6 @@ public class solSemanticChecker extends SolBaseListener
     @Override
     public void exitIdentifier(SolParser.IdentifierContext ctx)
     {
-        // Class<?> variableType = this.variableTypes.get(ctx.IDENTIFIER().getText());
         Class<?> variableType = this.scope.getVariable(ctx.IDENTIFIER().getText());
         if (variableType != null)
             this.annotatedTypes.put(ctx, variableType);
@@ -293,14 +290,14 @@ public class solSemanticChecker extends SolBaseListener
             if (exprType != null && !compatibleTypes(variableType, exprType))
                 this.reporter.reportError(ctx, TYPE_MISMATCH_ERROR_MESSAGE);
         }
-        this.scope.putVariable(variableName,variableType);
+        this.scope.putVariable(variableName, variableType);
     }
 
-    private static boolean compatibleTypes(Class<?> type1, Class<?> type2)
+    private static boolean compatibleTypes(Class<?> variableType, Class<?> expressionType)
     {
-        boolean isType1Number = type1 == Integer.class || type1 == Double.class;
-        boolean isType2Number = type2 == Integer.class || type2 == Double.class;
-        return type1 == type2 || (isType1Number && isType2Number);
+        boolean isVariableDouble = variableType == Double.class;
+        boolean isExpressionNumber = expressionType == Integer.class || expressionType == Double.class;
+        return variableType == expressionType || (isVariableDouble && isExpressionNumber);
     }
 
     @Override
@@ -383,94 +380,98 @@ public class solSemanticChecker extends SolBaseListener
     }
 
     @Override
-    public void enterFunctionDeclaration(SolParser.FunctionDeclarationContext ctx){
-        // MAJOR HACK INCOMING OHH MY GOOOOD
-        this.currentFunctionReturnType = this.functions.get(ctx.IDENTIFIER().getText()).getReturnType();
+    public void enterFunctionDeclaration(SolParser.FunctionDeclarationContext ctx)
+    {
+        this.currentFunction = this.functions.get(ctx.IDENTIFIER().getText());
     }
 
     @Override
-    public void exitReturn(SolParser.ReturnContext ctx){
-        // MAJOR HACK INCOMING OHH MY GOOOOD
+    public void exitReturn(SolParser.ReturnContext ctx)
+    {
         Class<?> cachedType = this.annotatedTypes.get(ctx.expr());
         Class<?> returnType = cachedType != null ? cachedType : Void.class;
-        if(!compatibleTypes(returnType,this.currentFunctionReturnType)){
-            this.reporter.reportError(
-                ctx,
-        INVALID_RETURN_TYPE_MESSAGE +
-                ", Expected: " +
-                Value.typeString(this.currentFunctionReturnType) +
-                " but got: " +
-                Value.typeString(returnType)
-            );
-        }
+        if (!compatibleTypes(this.currentFunction.getReturnType(), returnType))
+            this.reporter.reportError(ctx, INVALID_RETURN_TYPE_MESSAGE);
     }
 
-
-    private void checkFunctionArguments(ParserRuleContext ctx, Function function, List<SolParser.ExprContext> expr, int providedArgs){
+    private void checkFunctionArguments(ParserRuleContext ctx, Function function, List<SolParser.ExprContext> args)
+    {
         int expectedArgs = function.getArgTypes().size();
-        if(providedArgs != expectedArgs){
-            this.reporter.reportError(ctx, "Expected " + expectedArgs + "Arguments but got " + providedArgs);
+        if (args.size() != expectedArgs)
+        {
+            this.reporter.reportError(ctx, WRONG_ARGUMENT_COUNT_MESSAGE);
             return;
         }
+
         List<Class<?>> argTypes = function.getArgTypes();
-        for(int i = 0; i < expectedArgs; i++){
-            Class<?> type = this.annotatedTypes.get(expr.get(i));
-            if(type == null){ // Something went very wrong we should stop now
-                throw new InternalError("Error annotating failed to return a type");
-            }
-            if(!type.equals(argTypes.get(i))){
-                this.reporter.reportError(
-                    expr.get(i),
-            "Mismatched argument type expected: " +
-                    Value.typeString(argTypes.get(i)) +
-                    "but got: " +
-                    Value.typeString(type)
-                );
-            }
+        for (int i = 0; i < expectedArgs; i++)
+        {
+            Class<?> type = this.annotatedTypes.get(args.get(i));
+            if (type == null)
+                return;
+            if (!compatibleTypes(argTypes.get(i), type))
+                this.reporter.reportError(args.get(i), TYPE_MISMATCH_ERROR_MESSAGE);
         }
-    }
-    @Override
-    public void exitVoidFunctionCall(SolParser.VoidFunctionCallContext ctx){
-        Function function = this.functions.get(ctx.IDENTIFIER().getText());
-        if(function == null){
-            this.reporter.reportError(ctx, "Call to unknown function : " + ctx.IDENTIFIER().getText());
-            return;
-        }
-        int providedArgs = ctx.expr().size();
-        checkFunctionArguments(ctx,function,ctx.expr(),providedArgs);
-        this.annotatedTypes.put(ctx,function.getReturnType());
     }
 
     @Override
-    public void exitNonVoidFunctionCall(SolParser.NonVoidFunctionCallContext ctx){
+    public void exitVoidFunctionCall(SolParser.VoidFunctionCallContext ctx)
+    {
         Function function = this.functions.get(ctx.IDENTIFIER().getText());
-        if(function == null){
-            this.reporter.reportError(ctx, "Call to unknown function : " + ctx.IDENTIFIER().getText());
+        if (function == null)
+        {
+            this.reporter.reportError(ctx, UNDECLARED_FUNCTION_ERROR_MESSAGE);
             return;
         }
-        int providedArgs = ctx.expr().size();
-        checkFunctionArguments(ctx,function,ctx.expr(),providedArgs);
-        this.annotatedTypes.put(ctx,function.getReturnType());
+        if (function.getReturnType() != Void.class)
+        {
+            this.reporter.reportError(ctx, IGNORED_RETURN_VALUE_ERROR_MESSAGE);
+            return;
+        }
+
+        this.checkFunctionArguments(ctx, function, ctx.expr());
+        this.annotatedTypes.put(ctx, function.getReturnType());
     }
 
     @Override
-    public void enterScope(SolParser.ScopeContext ctx){
+    public void exitNonVoidFunctionCall(SolParser.NonVoidFunctionCallContext ctx)
+    {
+        Function function = this.functions.get(ctx.IDENTIFIER().getText());
+        if (function == null)
+        {
+            this.reporter.reportError(ctx, UNDECLARED_FUNCTION_ERROR_MESSAGE);
+            return;
+        }
+        if (function.getReturnType() == Void.class)
+        {
+            this.reporter.reportError(ctx, VOID_RETURN_VALUE_ERROR_MESSAGE);
+            return;
+        }
+
+        this.checkFunctionArguments(ctx, function, ctx.expr());
+        this.annotatedTypes.put(ctx, function.getReturnType());
+    }
+
+    @Override
+    public void enterScope(SolParser.ScopeContext ctx)
+    {
         this.scope.addChild(new ScopeTree(this.scope));
         this.scope = this.scope.getRightmostChild();
         ParserRuleContext parent = ctx.getParent();
-        if(parent instanceof SolParser.FunctionDeclarationContext){ // Because we are using a listener we have to add the argument types after the created scope
-           ((SolParser.FunctionDeclarationContext) parent).argument().forEach(
-               (arg) -> {
+        if (parent instanceof SolParser.FunctionDeclarationContext) // Because we are using a listener we have to add the argument types after the created scope
+        {
+           ((SolParser.FunctionDeclarationContext) parent).argument().forEach((arg) -> {
                    Class<?> type = Value.typeOf(arg.type.getText());
                    this.scope.putVariable(arg.IDENTIFIER().getText(), type);
-                   this.annotatedTypes.put(arg,type); // Because this is a variable assignment we also need to annotate the node
+                   // this.annotatedTypes.put(arg, type); // Because this is a variable assignment we also need to annotate the node
                }
            );
         }
     }
 
     @Override
-    public void exitScope(SolParser.ScopeContext ctx){
+    public void exitScope(SolParser.ScopeContext ctx)
+    {
         this.scope = (ScopeTree) this.scope.getParent(); // Back track on our scopes when moving because global scope is not classified as such we never go beyond root
     }
 

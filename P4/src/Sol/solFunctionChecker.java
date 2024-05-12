@@ -25,7 +25,6 @@ public class solFunctionChecker extends SolBaseListener
     private final ParseTreeProperty<Boolean> annotatedReturns;
     private boolean hasMain;
 
-
     public solFunctionChecker(ErrorReporter reporter)
     {
         this.reporter = reporter;
@@ -49,23 +48,26 @@ public class solFunctionChecker extends SolBaseListener
         if (id.equals("main") && returnType == Void.class && argTypes.isEmpty())
             this.hasMain = true;
         Function function = new Function(returnType, argTypes);
-        this.functions.put(id,function);
+        if (this.functions.containsKey(id))
+            this.reporter.reportError(ctx, "Declaring already declared function");
+        else
+            this.functions.put(id, function);
     }
 
     @Override
     public void enterEveryRule(ParserRuleContext ctx)
     {
-        if (ctx instanceof SolParser.InstructionContext || ctx instanceof SolParser.ScopeContext)
+        if (ctx instanceof SolParser.InstructionContext)
             this.annotatedReturns.put(ctx, ctx instanceof SolParser.ReturnContext);
     }
 
     @Override
     public void exitScope(SolParser.ScopeContext ctx)
     {
-        boolean hasReturn = this.annotatedReturns.get(ctx);
+        boolean hasReturn = false;
         for (SolParser.InstructionContext instruction : ctx.instruction())
         {
-            hasReturn |= this.annotatedReturns.get(instruction);
+            hasReturn = this.annotatedReturns.get(instruction);
             if (hasReturn)
                 break;
         }
@@ -90,8 +92,8 @@ public class solFunctionChecker extends SolBaseListener
     @Override
     public void exitFunctionDeclaration(SolParser.FunctionDeclarationContext ctx)
     {
-        Boolean isReturned = this.annotatedReturns.get(ctx.scope());
-        if (isReturned == null || !isReturned && !Value.typeOf(ctx.type.getText()).equals(Void.class))
+        boolean isReturned = this.annotatedReturns.get(ctx.scope());
+        if (!isReturned && !Value.typeOf(ctx.type.getText()).equals(Void.class))
             this.reporter.reportError(ctx, "Function might not always reach a return instruction");
     }
 
@@ -111,7 +113,7 @@ public class solFunctionChecker extends SolBaseListener
         try {
             ErrorReporter rep = new ErrorReporter();
             solFunctionChecker checker = new solFunctionChecker(rep);
-            inputStream = new FileInputStream("inputs/returnTest.sol");
+            inputStream = System.in;
             CharStream input = CharStreams.fromStream(inputStream);
             SolLexer lexer = new SolLexer(input);
             CommonTokenStream tokens = new CommonTokenStream(lexer);
