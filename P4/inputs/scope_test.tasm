@@ -1,0 +1,57 @@
+				galloc 3
+				iconst 1
+				gstore 0
+				iconst 2
+				gstore 1
+				iconst 3
+				gstore 2
+				lalloc 0
+				lalloc 2
+				iconst 2
+				itod
+				lstore 2
+				iconst 4
+				itod
+				lstore 3
+				lalloc 2
+				iconst 2
+				itod
+				lstore 4
+				iconst 4
+				itod
+				lstore 5
+				pop 2
+				pop 2
+				lalloc 2
+				iconst 2
+				lstore 2
+				iconst 4
+				lstore 3
+				pop 2
+				lload -2
+				lload -1
+				iadd
+				gload 2
+				iadd
+				retval 2
+				lalloc 2
+				iconst 1
+				lstore 0
+				iconst 2
+				lstore 1
+				lload 0
+				gstore 1
+				lalloc 1
+				iconst 3
+				lstore 2
+				gload 2
+				lload 1
+				iadd
+				gstore 2
+				gload 2
+				lload 2
+				iadd
+				gstore 2
+				pop 1
+				ret 0
+				halt

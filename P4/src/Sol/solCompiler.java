@@ -42,8 +42,12 @@ public class solCompiler extends SolBaseVisitor<Void>
     private ConstantPool constantPool;
     private ParseTreeProperty<Class<?>> annotatedTypes;
     private HashMap<String, Integer> variableIndices;
+    private ScopeTree scope;
     private Stack<Instruction> breaks;
     private ErrorReporter reporter;
+    private ParseTreeProperty<ScopeTree> scopeAnnotations;
+    private HashMap<String, Instruction> functionCalls;
+    private HashMap<String, Function> functions;
 
     public solCompiler()
     {
@@ -51,6 +55,26 @@ public class solCompiler extends SolBaseVisitor<Void>
         this.byteCodesFileName = DEFAULT_BYTECODES_FILE_NAME;
         this.showAssembly = DEFAULT_SHOW_ASSEMBLY;
         this.generateTasmFile = DEFAULT_GENERATE_TASM_FILE;
+    }
+
+    private void loadVariable(String identifier){
+        ScopeTree.Variable var = this.scope.getVariable(identifier);
+        if(var.global()){
+            this.instructions.add(new Instruction(Instruction.Code.GLOAD, var.index()));
+        }
+        else{
+            this.instructions.add(new Instruction(Instruction.Code.LLOAD, var.index()));
+        }
+    }
+
+    private void storeVariable(String identifier){
+        ScopeTree.Variable var = this.scope.getVariable(identifier);
+        if(var.global()){
+            this.instructions.add(new Instruction(Instruction.Code.GSTORE, var.index()));
+        }
+        else{
+            this.instructions.add(new Instruction(Instruction.Code.LSTORE, var.index()));
+        }
     }
 
     @Override
@@ -91,7 +115,7 @@ public class solCompiler extends SolBaseVisitor<Void>
     @Override
     public Void visitIdentifier(SolParser.IdentifierContext ctx)
     {
-        this.instructions.add(new Instruction(Instruction.Code.GLOAD, this.variableIndices.get(ctx.IDENTIFIER().getText())));
+        this.loadVariable(ctx.IDENTIFIER().getText());
         return null;
     }
 
@@ -253,9 +277,10 @@ public class solCompiler extends SolBaseVisitor<Void>
             this.visit(ctx.expr());
             if (this.annotatedTypes.get(ctx.getParent()) == Double.class && this.annotatedTypes.get(ctx.expr()) == Integer.class)
                 this.instructions.add(new Instruction(Instruction.Code.ITOD));
-            this.instructions.add(new Instruction(Instruction.Code.GSTORE, this.variableIndices.size()));
+            this.storeVariable(ctx.IDENTIFIER().getText());
+            //this.instructions.add(new Instruction(Instruction.Code.GSTORE, this.variableIndices.size()));
         }
-        this.variableIndices.put(ctx.IDENTIFIER().getText(), this.variableIndices.size());
+        //this.variableIndices.put(ctx.IDENTIFIER().getText(), this.variableIndices.size()); // I think we no longer need to do this since we get the indexes on semantic check
         return null;
     }
 
@@ -282,7 +307,8 @@ public class solCompiler extends SolBaseVisitor<Void>
         this.visit(ctx.expr());
         if (this.annotatedTypes.get(ctx) == Double.class && this.annotatedTypes.get(ctx.expr()) == Integer.class)
             this.instructions.add(new Instruction(Instruction.Code.ITOD));
-        this.instructions.add(new Instruction(Instruction.Code.GSTORE, this.variableIndices.get(ctx.IDENTIFIER().getText())));
+        this.storeVariable(ctx.IDENTIFIER().getText());
+        //this.instructions.add(new Instruction(Instruction.Code.GSTORE, this.variableIndices.get(ctx.IDENTIFIER().getText())));
         return null;
     }
 
@@ -314,7 +340,8 @@ public class solCompiler extends SolBaseVisitor<Void>
         this.visit(ctx.assign());
         int initialBreakCount = this.breaks.size();
         int loopStart = this.instructions.size();
-        int variableIndex = this.variableIndices.get(ctx.assign().IDENTIFIER().getText());
+        //int variableIndex = this.variableIndices.get(ctx.assign().IDENTIFIER().getText());
+        int variableIndex = this.scope.getVariable(ctx.assign().IDENTIFIER().getText()).index();
 
         this.visit(ctx.expr());
         this.instructions.add(new Instruction(Instruction.Code.GLOAD, variableIndex));
@@ -373,11 +400,78 @@ public class solCompiler extends SolBaseVisitor<Void>
         this.instructions.add(globalAlloc);
         for (SolParser.DeclarationContext declaration : ctx.declaration())
             this.visit(declaration);
-        globalAlloc.backPatch(this.variableIndices.size());
+        globalAlloc.backPatch(this.scope.getVariableCount()); // scope is going to be root
+        Instruction mainCall = new Instruction(Instruction.Code.CALL, Instruction.TO_DEFINE); // we trust that it will be backpatched
+        this.functionCalls.put("main", mainCall);
+        this.instructions.add(mainCall);
+        this.instructions.add(new Instruction(Instruction.Code.HALT));
 
         for (SolParser.FunctionDeclarationContext func : ctx.functionDeclaration())
             this.visit(func);
-        this.instructions.add(new Instruction(Instruction.Code.HALT));
+        Instruction mainCheck = this.functionCalls.get("main");
+        if(mainCheck == null || mainCheck.getOperand() == Instruction.TO_DEFINE) throw new InternalError("Couldn't find main, something very wrong happened");
+
+        // TODO: Remove any Lalloc 0 and Galloc 0
+        return null;
+    }
+
+    @Override public Void visitScope(SolParser.ScopeContext ctx){
+        this.scope = this.scopeAnnotations.get(ctx);
+        Instruction alloc = new Instruction(Instruction.Code.LALLOC, Instruction.TO_DEFINE);
+        this.instructions.add(alloc);
+        ctx.declaration().forEach(this::visit);
+        ctx.instruction().forEach(this::visit);
+        
+        int allocAmount = this.scope.getVariableCount();
+        
+        if(ctx.getParent() instanceof SolParser.BlockContext)
+            this.instructions.add(new Instruction(Instruction.Code.POP,this.scope.getVariableCount()));
+        
+        if(ctx.getParent() instanceof  SolParser.FunctionDeclarationContext parent){
+           allocAmount = allocAmount - this.functions.get(parent.IDENTIFIER().getText()).getArgTypes().size();
+        }
+        alloc.backPatch(allocAmount);
+        this.scope = (ScopeTree) this.scope.getParent(); // return scope to previous state
+       return null;
+    }
+    
+    @Override
+    public Void visitFunctionDeclaration(SolParser.FunctionDeclarationContext ctx){
+        int currentInstructionSize = this.instructions.size();
+        visit(ctx.scope());
+        Instruction toJump = this.functionCalls.get(ctx.IDENTIFIER().getText());
+        if(toJump == null){
+            this.functionCalls.put(ctx.IDENTIFIER().getText(),new Instruction(Instruction.Code.CALL, currentInstructionSize));
+        }
+        else{
+            toJump.backPatch(currentInstructionSize);
+        }
+        Function function = this.functions.get(ctx.IDENTIFIER().getText());
+        Instruction.Code code = function.getReturnType().equals(Void.class) ? Instruction.Code.RET : Instruction.Code.RETVAL;
+        this.instructions.add(new Instruction(code, function.getArgTypes().size()));
+       return null;
+    }
+
+    private void addFunctionJumps(String identifier){
+        Instruction toJump = this.functionCalls.get(identifier);
+
+        if(toJump == null){
+            Instruction newJump = new Instruction(Instruction.Code.CALL, Instruction.TO_DEFINE);
+            this.functionCalls.put(identifier, newJump);
+            toJump = newJump;
+        }
+        this.instructions.add(toJump);
+    }
+    @Override
+    public Void visitNonVoidFunctionCall(SolParser.NonVoidFunctionCallContext ctx){
+        ctx.expr().forEach(this::visit);
+        this.addFunctionJumps(ctx.IDENTIFIER().getText());
+        return null;
+    }
+    @Override
+    public Void visitVoidFunctionCall(SolParser.VoidFunctionCallContext ctx){
+        ctx.expr().forEach(this::visit);
+        this.addFunctionJumps(ctx.IDENTIFIER().getText());
         return null;
     }
 
@@ -388,8 +482,8 @@ public class solCompiler extends SolBaseVisitor<Void>
         this.semanticCheck();
         if (this.hasNoErrors())
         {
-            //this.generateInstructions();
-            //this.writeByteCodes();
+            this.generateInstructions();
+            this.writeByteCodes();
         }
         else
             this.unsuccessfulCompileError();
@@ -450,6 +544,7 @@ public class solCompiler extends SolBaseVisitor<Void>
         this.variableIndices = new HashMap<>();
         this.breaks = new Stack<>();
         this.reporter = new ErrorReporter();
+        this.functionCalls = new HashMap<>();
     }
 
     private SolParser generateParser() throws IOException
@@ -466,6 +561,9 @@ public class solCompiler extends SolBaseVisitor<Void>
         solSemanticChecker semanticChecker = new solSemanticChecker(this.reporter);
         semanticChecker.semanticCheck(this.tree);
         this.annotatedTypes = semanticChecker.getAnnotatedTypes();
+        this.scope = semanticChecker.getScope();
+        this.scopeAnnotations = semanticChecker.getScopeAnnotations();
+        this.functions = semanticChecker.getFunctions();
     }
 
     private boolean hasNoErrors()
@@ -569,7 +667,7 @@ public class solCompiler extends SolBaseVisitor<Void>
         {
             case DCONST -> line.append(" ").append(this.constantPool.get(instruction.getOperand()));
             case SCONST -> line.append(" \"").append(this.constantPool.get(instruction.getOperand())).append("\"");
-            case JUMP, JUMPT, JUMPF -> {
+            case JUMP, JUMPT, JUMPF, CALL -> {
                 String label = "_l" + instruction.getOperand();
                 line.append(" ").append(label);
             }
@@ -587,7 +685,7 @@ public class solCompiler extends SolBaseVisitor<Void>
         for (Instruction instruction : this.instructions)
         {
             Instruction.Code code = instruction.getInstruction();
-            if (code == Instruction.Code.JUMP || code == Instruction.Code.JUMPT || code == Instruction.Code.JUMPF)
+            if (code == Instruction.Code.JUMP || code == Instruction.Code.JUMPT || code == Instruction.Code.JUMPF || code == Instruction.Code.CALL)
             {
                 String label = "_l" + instruction.getOperand() + ":";
                 if (!tasmCode[instruction.getOperand()].contains(label))

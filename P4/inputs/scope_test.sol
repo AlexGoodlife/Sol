@@ -1,9 +1,21 @@
 int i = 1;
 int j = 2;
-real k = 3;
+int k = 3;
 
 int foo(int i, int j)
 begin
+    begin
+        real x = 2;
+        real y = 4;
+        begin
+            real z = 2;
+            real w = 4;
+        end
+    end
+    begin
+        int first = 2;
+        int second = 4;
+    end
     return i + j + k;
 end
 void main()
@@ -16,5 +28,5 @@ begin
         k = k + scoped;
         k = k + i;
     end
-    return i;
+    return;
 end

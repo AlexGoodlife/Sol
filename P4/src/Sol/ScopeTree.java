@@ -8,9 +8,15 @@ import java.util.List;
 
 public class ScopeTree implements Tree
 {
-    private final HashMap<String, Class<?>> variables;
+    public record Variable(Class<?> type, int index, boolean global) {
+    }
+    private final HashMap<String, Variable> variables;
     private ScopeTree parent;
     private final List<ScopeTree> children;
+
+    private int variableIndex;
+    private int offset;
+
 
     public ScopeTree()
     {
@@ -21,7 +27,30 @@ public class ScopeTree implements Tree
     public ScopeTree(ScopeTree parent)
     {
         this();
+        /*
+        Because global memory is stored with GALLOC and GSTORE rather than LALLOC indices get weird,
+        Meaning that for any child we need to check if the parent is root, if so, offset from that nodes variables
+         */
         this.parent = parent;
+        this.offset = this.parent == null ? 0 : this.parent.offset;
+
+        if(this.parent == null) return;
+
+        if(this.parent.parent != null){
+            this.variableIndex = this.parent.variableIndex;
+        }
+
+    }
+
+    public ScopeTree(ScopeTree parent, int offset)
+    {
+        this();
+        this.parent = parent;
+        this.offset += offset;
+    }
+
+    public void offset(int offset){
+        this.offset += offset;
     }
 
     public void addChild(ScopeTree child)
@@ -29,28 +58,29 @@ public class ScopeTree implements Tree
         this.children.add(child);
     }
 
-    public Class<?> getVariableLocal(String identifier)
+    public Variable getVariableLocal(String identifier)
     {
         return this.variables.get(identifier);
     }
 
-    private static Class<?> getVariableRecursive(ScopeTree tree, String identifier)
+    private static Variable getVariableRecursive(ScopeTree tree, String identifier)
     {
         if (tree == null)
            return null;
 
-        Class<?> type = tree.getVariableLocal(identifier);
-        return type != null ? type : getVariableRecursive(tree.parent, identifier);
+        Variable var = tree.getVariableLocal(identifier);
+        return var != null ? var : getVariableRecursive(tree.parent, identifier);
     }
 
-    public Class<?> getVariable(String identifier)
+    public Variable getVariable(String identifier)
     {
         return getVariableRecursive(this, identifier);
     }
 
     public void putVariable(String identifier, Class<?> type)
     {
-        this.variables.put(identifier, type);
+        boolean isRoot = this.parent == null;
+        this.variables.put(identifier, new Variable(type, (this.variableIndex++ + this.offset),isRoot));
     }
 
     public boolean containsVariableLocal(String identifier)
@@ -68,6 +98,9 @@ public class ScopeTree implements Tree
         return this.children.get(this.children.size() - 1);
     }
 
+    public int getVariableCount(){
+        return this.variables.size();
+    }
     @Override
     public Tree getParent()
     {

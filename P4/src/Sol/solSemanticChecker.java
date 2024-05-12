@@ -23,6 +23,7 @@ public class solSemanticChecker extends SolBaseListener
 
     private final ErrorReporter reporter;
     private final ParseTreeProperty<Class<?>> annotatedTypes;
+    private final ParseTreeProperty<ScopeTree> annotatedScopes;
     private HashMap<String,Function> functions;
     private ScopeTree scope;
     private Function currentFunction;
@@ -32,6 +33,7 @@ public class solSemanticChecker extends SolBaseListener
     {
         this.reporter = reporter;
         this.annotatedTypes = new ParseTreeProperty<>();
+        this.annotatedScopes = new ParseTreeProperty<>();
         this.scope = new ScopeTree();
         this.nestedLoopCount = 0;
     }
@@ -68,7 +70,7 @@ public class solSemanticChecker extends SolBaseListener
     @Override
     public void exitIdentifier(SolParser.IdentifierContext ctx)
     {
-        Class<?> variableType = this.scope.getVariable(ctx.IDENTIFIER().getText());
+        Class<?> variableType = this.scope.getVariable(ctx.IDENTIFIER().getText()).type();
         if (variableType != null)
             this.annotatedTypes.put(ctx, variableType);
         else
@@ -313,7 +315,7 @@ public class solSemanticChecker extends SolBaseListener
             return;
         }
 
-        Class<?> variableType = this.scope.getVariable(variableName);
+        Class<?> variableType = this.scope.getVariable(variableName).type();
         Class<?> exprType = this.annotatedTypes.get(ctx.expr());
         if (exprType == null)
             return;
@@ -457,15 +459,19 @@ public class solSemanticChecker extends SolBaseListener
     {
         this.scope.addChild(new ScopeTree(this.scope));
         this.scope = this.scope.getRightmostChild();
+        this.annotatedScopes.put(ctx,this.scope);
         ParserRuleContext parent = ctx.getParent();
         if (parent instanceof SolParser.FunctionDeclarationContext) // Because we are using a listener we have to add the argument types after the created scope
         {
-           ((SolParser.FunctionDeclarationContext) parent).argument().forEach((arg) -> {
+           List<SolParser.ArgumentContext> args = ((SolParser.FunctionDeclarationContext) parent).argument();
+           this.scope.offset(-args.size());
+           args.forEach((arg) -> {
                    Class<?> type = Value.typeOf(arg.type.getText());
                    this.scope.putVariable(arg.IDENTIFIER().getText(), type);
                    // this.annotatedTypes.put(arg, type); // Because this is a variable assignment we also need to annotate the node
                }
            );
+           this.scope.offset(args.size());
         }
     }
 
@@ -474,6 +480,23 @@ public class solSemanticChecker extends SolBaseListener
     {
         this.scope = (ScopeTree) this.scope.getParent(); // Back track on our scopes when moving because global scope is not classified as such we never go beyond root
     }
+
+    public ScopeTree getScope(){
+        // Ensure we are at root
+        while (this.scope.getParent() != null){
+            this.scope = (ScopeTree) this.scope.getParent();
+        }
+        return this.scope;
+    }
+
+    public ParseTreeProperty<ScopeTree> getScopeAnnotations(){
+        // Ensure we are at root
+        return this.annotatedScopes;
+    }
+
+    public HashMap<String, Function> getFunctions(){
+        return this.functions;
+}
 
     public void semanticCheck(ParseTree tree)
     {
