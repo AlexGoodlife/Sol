@@ -1,0 +1,289 @@
+				call _l2
+				halt
+_l2:			sconst "Integer operations:"
+				sprint
+				sconst "1 + 5 ="
+				sprint
+				iconst 1
+				iconst 5
+				iadd
+				iprint
+				sconst "1 - 1 ="
+				sprint
+				iconst 1
+				iconst 1
+				isub
+				iprint
+				sconst "10 * 10 ="
+				sprint
+				iconst 10
+				iconst 10
+				imult
+				iprint
+				sconst "4 / 2 ="
+				sprint
+				iconst 4
+				iconst 2
+				idiv
+				iprint
+				sconst "17 % 10 ="
+				sprint
+				iconst 17
+				iconst 10
+				imod
+				iprint
+				sconst "-10 ="
+				sprint
+				iconst 10
+				iuminus
+				iprint
+				sconst "5 < 6 ="
+				sprint
+				iconst 5
+				iconst 6
+				ilt
+				bprint
+				sconst "5 > 6 ="
+				sprint
+				iconst 6
+				iconst 5
+				ilt
+				bprint
+				sconst "7 <= 7 ="
+				sprint
+				iconst 7
+				iconst 7
+				ileq
+				bprint
+				sconst "7 >= 6 ="
+				sprint
+				iconst 6
+				iconst 7
+				ileq
+				bprint
+				sconst "0 == 0"
+				sprint
+				iconst 0
+				iconst 0
+				ieq
+				bprint
+				sconst "1 != 0"
+				sprint
+				iconst 1
+				iconst 0
+				ineq
+				bprint
+				sconst "\nReal operations:"
+				sprint
+				sconst "1.2 + 5.3 ="
+				sprint
+				dconst 1.2
+				dconst 5.3
+				dadd
+				dprint
+				sconst "1.0 - 0.9 ="
+				sprint
+				dconst 1.0
+				dconst 0.9
+				dsub
+				dprint
+				sconst "1.0 * 10.2 ="
+				sprint
+				dconst 1.0
+				dconst 10.2
+				dmult
+				dprint
+				sconst "3.6 / 2.0  ="
+				sprint
+				dconst 3.6
+				dconst 2.0
+				ddiv
+				dprint
+				sconst "-10.1 ="
+				sprint
+				dconst 10.1
+				duminus
+				dprint
+				sconst "5.9999 < 6.0 ="
+				sprint
+				dconst 5.9999
+				dconst 6.0
+				dlt
+				bprint
+				sconst "6.0 > 6.0 ="
+				sprint
+				dconst 6.0
+				dconst 6.0
+				dlt
+				bprint
+				sconst "7.27 <= 7.27 ="
+				sprint
+				dconst 7.27
+				dconst 7.27
+				dleq
+				bprint
+				sconst "7.27 >= 6.66 ="
+				sprint
+				dconst 6.66
+				dconst 7.27
+				dleq
+				bprint
+				sconst "0.5 == 0.0"
+				sprint
+				dconst 0.5
+				dconst 0.0
+				deq
+				bprint
+				sconst "1.23456 != 1.0"
+				sprint
+				dconst 1.23456
+				dconst 1.0
+				dneq
+				bprint
+				sconst "\nString operations:"
+				sprint
+				sconst ""Hello " + "World" ="
+				sprint
+				sconst "Hello "
+				sconst "World"
+				sadd
+				sprint
+				sconst ""Hello" == "World" ="
+				sprint
+				sconst "Hello"
+				sconst "World"
+				seq
+				bprint
+				sconst ""Hello" != "World" ="
+				sprint
+				sconst "Hello"
+				sconst "World"
+				sneq
+				bprint
+				sconst "\nBoolean operations:"
+				sprint
+				sconst "true or false ="
+				sprint
+				tconst
+				fconst
+				or
+				bprint
+				sconst "true and true ="
+				sprint
+				tconst
+				tconst
+				and
+				bprint
+				sconst "not false ="
+				sprint
+				fconst
+				not
+				bprint
+				sconst "true == true"
+				sprint
+				tconst
+				tconst
+				beq
+				bprint
+				sconst "true != true"
+				sprint
+				tconst
+				tconst
+				bneq
+				bprint
+				sconst "\nInteger and real operations:"
+				sprint
+				sconst "1.2 + 5 ="
+				sprint
+				dconst 1.2
+				iconst 5
+				itod
+				dadd
+				dprint
+				sconst "1 - 0.9 ="
+				sprint
+				iconst 1
+				itod
+				dconst 0.9
+				dsub
+				dprint
+				sconst "1.0 * 10 ="
+				sprint
+				dconst 1.0
+				iconst 10
+				itod
+				dmult
+				dprint
+				sconst "3 / 2.5  ="
+				sprint
+				iconst 3
+				itod
+				dconst 2.5
+				ddiv
+				dprint
+				sconst "5.9999 < 6 ="
+				sprint
+				dconst 5.9999
+				iconst 6
+				itod
+				dlt
+				bprint
+				sconst "6 > 6.1 ="
+				sprint
+				dconst 6.1
+				iconst 6
+				itod
+				dlt
+				bprint
+				sconst "7.27 <= 7 ="
+				sprint
+				dconst 7.27
+				iconst 7
+				itod
+				dleq
+				bprint
+				sconst "7.27 >= 6 ="
+				sprint
+				iconst 6
+				itod
+				dconst 7.27
+				dleq
+				bprint
+				sconst "0.5 == 0"
+				sprint
+				dconst 0.5
+				iconst 0
+				itod
+				deq
+				bprint
+				sconst "1.23456 != 1"
+				sprint
+				dconst 1.23456
+				iconst 1
+				itod
+				dneq
+				bprint
+				sconst "\nString concat operations:"
+				sprint
+				sconst ""Hello " + 1 ="
+				sprint
+				sconst "Hello "
+				iconst 1
+				itos
+				sadd
+				sprint
+				sconst "3.1415 + " World" ="
+				sprint
+				dconst 3.1415
+				dtos
+				sconst " World"
+				sadd
+				sprint
+				sconst ""Hello " + false ="
+				sprint
+				sconst "Hello "
+				fconst
+				btos
+				sadd
+				sprint
+				ret 0

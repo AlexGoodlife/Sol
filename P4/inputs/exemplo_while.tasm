@@ -1,0 +1,32 @@
+				galloc 2
+				call _l3
+				halt
+_l3:			iconst 7
+				gstore 1
+				iconst 1
+				gstore 0
+_l7:			gload 0
+				iconst 10
+				ileq
+				jumpf _l31
+				gload 1
+				itos
+				sconst " x "
+				sadd
+				gload 0
+				itos
+				sadd
+				sconst " = "
+				sadd
+				gload 1
+				gload 0
+				imult
+				itos
+				sadd
+				sprint
+				gload 0
+				iconst 1
+				iadd
+				gstore 0
+				jump _l7
+_l31:			ret 0

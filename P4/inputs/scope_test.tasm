@@ -5,7 +5,8 @@
 				gstore 1
 				iconst 3
 				gstore 2
-				lalloc 0
+				call _l37
+				halt
 				lalloc 2
 				iconst 2
 				itod
@@ -34,24 +35,23 @@
 				gload 2
 				iadd
 				retval 2
-				lalloc 2
+_l37:			lalloc 2
 				iconst 1
-				lstore 0
+				lstore 2
 				iconst 2
-				lstore 1
-				lload 0
+				lstore 3
+				lload 2
 				gstore 1
 				lalloc 1
 				iconst 3
-				lstore 2
+				lstore 4
 				gload 2
-				lload 1
+				lload 3
 				iadd
 				gstore 2
 				gload 2
-				lload 2
+				lload 4
 				iadd
 				gstore 2
 				pop 1
 				ret 0
-				halt

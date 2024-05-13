@@ -1,0 +1,20 @@
+				galloc 1
+				call _l3
+				halt
+_l3:			iconst 1
+				gstore 0
+_l5:			iconst 9
+				gload 0
+				ilt
+				jumpt _l19
+				gload 0
+				itos
+				sconst " Hallo :D"
+				sadd
+				sprint
+				gload 0
+				iconst 1
+				iadd
+				gstore 0
+				jump _l5
+_l19:			ret 0

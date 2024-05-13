@@ -1,17 +1,25 @@
-int previous, result, i, n, temp;
+int fib(int n)
+begin
+    int previous = 0;
+    int result = 1;
+    int i, temp;
 
-previous = 0;
-result = 1;
-n = 46;
+    if n == 0 then
+        result = previous;
+    else
+        for i = 1 to n - 1 do
+        begin
+            temp = result;
+            result = previous + result;
+            previous = temp;
+        end
 
-if n == 0 then
-    result = previous;
-else
-    for i = 1 to n - 1 do
-    begin
-        temp = result;
-        result = previous + result;
-        previous = temp;
-    end
+    return result;
+end
 
-print result;
+void main()
+begin
+    int result = fib(20);
+    print result;
+    print fib(46);
+end

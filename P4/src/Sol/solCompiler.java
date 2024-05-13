@@ -336,20 +336,20 @@ public class solCompiler extends SolBaseVisitor<Void>
 
         int initialBreakCount = this.breaks.size();
         int loopStart = this.instructions.size();
-        int variableIndex = this.scope.getVariable(ctx.assign().IDENTIFIER().getText()).index();
+        String variableName = ctx.assign().IDENTIFIER().getText();
 
         this.visit(ctx.expr());
-        this.instructions.add(new Instruction(Instruction.Code.GLOAD, variableIndex));
+        this.loadVariable(variableName);
         this.instructions.add(new Instruction(Instruction.Code.ILT));
         Instruction jump = new Instruction(Instruction.Code.JUMPT, Instruction.TO_DEFINE);
         this.instructions.add(jump);
 
         this.visit(ctx.instruction());
         //Increment variable
-        this.instructions.add(new Instruction(Instruction.Code.GLOAD, variableIndex));
+        this.loadVariable(variableName);
         this.instructions.add(new Instruction(Instruction.Code.ICONST, 1));
         this.instructions.add(new Instruction(Instruction.Code.IADD));
-        this.instructions.add(new Instruction(Instruction.Code.GSTORE, variableIndex));
+        this.storeVariable(variableName);
         this.instructions.add(new Instruction(Instruction.Code.JUMP, loopStart));
 
         jump.backPatch(this.instructions.size());

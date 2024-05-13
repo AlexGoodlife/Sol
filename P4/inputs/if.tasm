@@ -1,0 +1,17 @@
+				call _l2
+				halt
+_l2:			lalloc 1
+				tconst
+				lstore 2
+				lload 2
+				jumpf _l10
+				sconst "Hallo :D"
+				sprint
+				jump _l14
+_l10:			sconst "Goodbye :("
+				sprint
+				sconst "END GOODBYE"
+				sprint
+_l14:			sconst "Bye bye"
+				sprint
+				ret 0

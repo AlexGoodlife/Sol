@@ -1,89 +1,92 @@
-/* Declaration errors */
+void main()
+begin
+    /* Declaration errors */
 
-int i, j = 0;
-real pi = 3.14;
-string hello = "Hello", white_space = " ", world = "World";
-bool b = true;
+    int i, j = 0;
+    real pi = 3.14;
+    string hello = "Hello", white_space = " ", world = "World";
+    bool b = true;
 
-real pi = 6.28; //Re-declaration
-real e = 3; //Type mismatch
+    real pi = 6.28; //Re-declaration
+    real e = 3; //Type mismatch
 
-pi = 6.28;
-e = 2.71;
+    pi = 6.28;
+    e = 2.71;
 
-tau = 2 * pi; //Undeclared tau variable
-pi = "3.14"; //Type mismatch
-
-
-/* Expressions using variables */
-
-print tau == pi * 2; //Undeclared tau variable
-print hello + white_space + world;
-
-//Type errors in expressions should still work with variables
-/* Type mismatch galore v2*/
-
-print not hello;
-print not pi;
-print -b;
-print b % b;
-print b + j;
-print hello - world;
-print hello / world;
-print b * pi;
-print j and pi;
-print pi or j;
-print world < hello;
-print pi == white_space;
+    tau = 2 * pi; //Undeclared tau variable
+    pi = "3.14"; //Type mismatch
 
 
-/* While loop */
+    /* Expressions using variables */
 
-while pi == 3.14 do
-	;
+    print tau == pi * 2; //Undeclared tau variable
+    print hello + white_space + world;
 
-while pi do //Type mismatch
-	;
+    //Type errors in expressions should still work with variables
+    /* Type mismatch galore v2*/
 
-
-/* For loop */
-
-for i = 0 to 100 * j do
-	;
-
-for i = 1 to 100.0 do //Type mismatch
-	;
-
-for pi = 3.14 to 1000 do //Type mismatch
-	;
-
-for pi = 3.14 to 1000.0 do //Type mismatch
-	;
+    print not hello;
+    print not pi;
+    print -b;
+    print b % b;
+    print b + j;
+    print hello - world;
+    print hello / world;
+    print b * pi;
+    print j and pi;
+    print pi or j;
+    print world < hello;
+    print pi == white_space;
 
 
-/* If statements */
+    /* While loop */
 
-if b then
-	;
-else
-	;
+    while pi == 3.14 do
+        ;
 
-if pi then //Type mismatch
-	;
-else if tau then //Undeclared tau variable
-	;
-else
-	;
+    while pi do //Type mismatch
+        ;
 
 
-/* Break instruction */
+    /* For loop */
 
-break; //break out of loop
+    for i = 0 to 100 * j do
+        ;
 
-while true do
-	break;
+    for i = 1 to 100.0 do //Type mismatch
+        ;
 
-string hello_world = hello + white_space + world;
+    for pi = 3.14 to 1000 do //Type mismatch
+        ;
+
+    for pi = 3.14 to 1000.0 do //Type mismatch
+        ;
 
 
-/* Assure that syntax errors don't cause Java internal errors in here Ig */
+    /* If statements */
+
+    if b then
+        ;
+    else
+        ;
+
+    if pi then //Type mismatch
+        ;
+    else if tau then //Undeclared tau variable
+        ;
+    else
+        ;
+
+
+    /* Break instruction */
+
+    break; //break out of loop
+
+    while true do
+        break;
+
+    string hello_world = hello + white_space + world;
+
+
+    /* Assure that syntax errors don't cause Java internal errors in here Ig */
+end

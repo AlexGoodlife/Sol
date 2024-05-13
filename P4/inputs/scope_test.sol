@@ -1,4 +1,4 @@
-    int i = 1;
+int i = 1;
 int j = 2;
 int k = 3;
 
@@ -18,6 +18,7 @@ begin
     end
     return i + j + k;
 end
+
 void main()
 begin
     int i = 1;

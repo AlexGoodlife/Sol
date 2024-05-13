@@ -1,5 +1,7 @@
 int i;
-for i = 1 to 9 do
+
+void main()
 begin
-    print i + " Hallo :D";
+    for i = 1 to 9 do
+        print i + " Hallo :D";
 end

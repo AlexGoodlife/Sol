@@ -1,0 +1,25 @@
+				call _l2
+				halt
+_l2:			lalloc 1
+				iconst 1
+				lstore 2
+_l5:			lload 2
+				iconst 10
+				ilt
+				jumpf _l24
+				iconst 5
+				lload 2
+				ilt
+				jumpf _l14
+				jump _l24
+_l14:			lload 2
+				itos
+				sconst " Hallo :D"
+				sadd
+				sprint
+				lload 2
+				iconst 1
+				iadd
+				lstore 2
+				jump _l5
+_l24:			ret 0

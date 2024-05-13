@@ -1,0 +1,61 @@
+				call _l2
+				halt
+_l2:			lalloc 5
+				iconst 30
+				lstore 4
+				sconst ""
+				lstore 6
+				iconst 1
+				lstore 2
+_l9:			lload 4
+				lload 2
+				ilt
+				jumpt _l51
+				tconst
+				lstore 5
+				iconst 2
+				lstore 3
+_l17:			lload 2
+				iconst 2
+				idiv
+				lload 3
+				ilt
+				jumpt _l37
+				lload 2
+				lload 3
+				imod
+				iconst 0
+				ieq
+				jumpf _l32
+				fconst
+				lstore 5
+				jump _l37
+_l32:			lload 3
+				iconst 1
+				iadd
+				lstore 3
+				jump _l17
+_l37:			lload 5
+				jumpf _l46
+				lload 6
+				sconst " "
+				sadd
+				lload 2
+				itos
+				sadd
+				lstore 6
+_l46:			lload 2
+				iconst 1
+				iadd
+				lstore 2
+				jump _l9
+_l51:			sconst "Prime numbers up to "
+				lload 4
+				itos
+				sadd
+				sconst ":"
+				sadd
+				lload 6
+				sadd
+				sprint
+				ret 0

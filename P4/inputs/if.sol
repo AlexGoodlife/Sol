@@ -1,9 +1,12 @@
-bool foo = true;
-if foo then
-    print "Hallo :D";
-else
+void main()
 begin
-    print "Goodbye :(";
-    print "END GOODBYE";
+    bool foo = true;
+    if foo then
+        print "Hallo :D";
+    else
+    begin
+        print "Goodbye :(";
+        print "END GOODBYE";
+    end
+    print "Bye bye";
 end
-print "Bye bye";

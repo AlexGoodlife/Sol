@@ -1,38 +1,47 @@
-				galloc 5
+				call _l37
+				halt
+_l2:			lalloc 4
 				iconst 0
-				gstore 0
+				lstore 2
 				iconst 1
-				gstore 1
-				iconst 46
-				gstore 3
-				gload 3
+				lstore 3
+				lload -1
 				iconst 0
 				ieq
 				jumpf _l14
-				gload 0
-				gstore 1
+				lload 2
+				lstore 3
 				jump _l35
 _l14:			iconst 1
-				gstore 2
-_l16:			gload 3
+				lstore 4
+_l16:			lload -1
 				iconst 1
 				isub
-				gload 2
+				lload 4
 				ilt
 				jumpt _l35
-				gload 1
-				gstore 4
-				gload 0
-				gload 1
+				lload 3
+				lstore 5
+				lload 2
+				lload 3
 				iadd
-				gstore 1
-				gload 4
-				gstore 0
-				gload 2
+				lstore 3
+				lload 5
+				lstore 2
+				lload 4
 				iconst 1
 				iadd
-				gstore 2
+				lstore 4
 				jump _l16
-_l35:			gload 1
+_l35:			lload 3
+				retval 1
+_l37:			lalloc 1
+				iconst 20
+				call _l2
+				lstore 2
+				lload 2
 				iprint
-				halt
+				iconst 46
+				call _l2
+				iprint
+				ret 0

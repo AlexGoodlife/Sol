@@ -1,0 +1,41 @@
+				call _l2
+				halt
+_l2:			iconst 1
+				iconst 2
+				iconst 3
+				imult
+				iadd
+				iprint
+				iconst 1
+				itod
+				dconst 2.0
+				iconst 3
+				itod
+				dmult
+				dadd
+				dprint
+				iconst 7
+				iconst 1
+				iconst 4
+				iadd
+				imod
+				iprint
+				tconst
+				iconst 5
+				itod
+				dconst 3.14159
+				dlt
+				and
+				bprint
+				sconst "pi = "
+				dconst 3.14159
+				dtos
+				sadd
+				sprint
+				sconst "ma"
+				sconst "ria"
+				sadd
+				sconst "maria"
+				seq
+				bprint
+				ret 0

@@ -1,4 +1,3 @@
-
 int foo(int x, int y)
 begin
    return 2;

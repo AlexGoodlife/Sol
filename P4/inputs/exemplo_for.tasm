@@ -1,0 +1,21 @@
+				call _l2
+				halt
+_l2:			lalloc 1
+				iconst 1
+				lstore 2
+_l5:			iconst 5
+				lload 2
+				ilt
+				jumpt _l18
+				lload 2
+				lload 2
+				imult
+				iprint
+				lload 2
+				iconst 1
+				iadd
+				lstore 2
+				jump _l5
+_l18:			sconst "Fim!"
+				sprint
+				ret 0

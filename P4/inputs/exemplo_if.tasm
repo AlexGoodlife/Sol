@@ -1,0 +1,19 @@
+				call _l2
+				halt
+_l2:			lalloc 1
+				iconst 10
+				lstore 2
+				lload 2
+				iconst 2
+				imod
+				iconst 0
+				ieq
+				jumpf _l14
+				sconst "par"
+				sprint
+				jump _l16
+_l14:			sconst "impar"
+				sprint
+_l16:			sconst "Fim!"
+				sprint
+				ret 0
