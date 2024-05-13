@@ -447,10 +447,7 @@ public class solCompiler extends SolBaseVisitor<Void>
 
         this.currentFunction = this.functions.get(functionName);
         this.visit(ctx.scope());
-        /*
-         If function is void we must implicitly return from it always
-         We could get our annotated returns from the function checker, don't know if its needed
-         */
+
         if (this.currentFunction.getReturnType().equals(Void.class) && !this.currentFunction.hasGuaranteedReturn())
             this.instructions.add(new Instruction(Instruction.Code.RET, this.currentFunction.getArgTypes().size()));
        return null;
