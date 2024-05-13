@@ -20,6 +20,7 @@ public class solSemanticChecker extends SolBaseListener
     private static final String UNDECLARED_FUNCTION_ERROR_MESSAGE = "Undeclared function in";
     private static final String IGNORED_RETURN_VALUE_ERROR_MESSAGE = "Return value is being ignored on";
     private static final String VOID_RETURN_VALUE_ERROR_MESSAGE = "Void function in an expression";
+    private static final String FUNCTION_ID_ERROR_MESSAGE = "Identifier is not a variable";
 
     private final ErrorReporter reporter;
     private final ParseTreeProperty<Class<?>> annotatedTypes;
@@ -88,11 +89,14 @@ public class solSemanticChecker extends SolBaseListener
     @Override
     public void exitIdentifier(SolParser.IdentifierContext ctx)
     {
-        ScopeTree.Variable var = this.scope.getVariable(ctx.IDENTIFIER().getText());
-        if (var != null)
-            this.annotatedTypes.put(ctx, var.type());
-        else
+        String variableName = ctx.IDENTIFIER().getText();
+        ScopeTree.Variable var = this.scope.getVariable(variableName);
+        if (this.functions.containsKey(variableName))
+            this.reporter.reportError(ctx, FUNCTION_ID_ERROR_MESSAGE);
+        else if (var == null)
             this.reporter.reportError(ctx, UNDECLARED_VAR_ERROR_MESSAGE);
+        else
+            this.annotatedTypes.put(ctx, var.type());
     }
 
     @Override
@@ -296,11 +300,8 @@ public class solSemanticChecker extends SolBaseListener
             return;
 
         String variableName = ctx.IDENTIFIER().getText();
-        if (this.scope.containsVariableLocal(variableName)) // Variable already declared in local scope
-        {
-            this.reporter.reportError(ctx, DECLARED_VAR_ERROR_MESSAGE);
+        if (this.checkVariableDeclarationsErrors(ctx, variableName))
             return;
-        }
 
         Class<?> variableType = this.annotatedTypes.get(ctx.getParent());
         if (variableType == null)
@@ -315,6 +316,22 @@ public class solSemanticChecker extends SolBaseListener
         this.scope.putVariable(variableName, variableType);
     }
 
+    private boolean checkVariableDeclarationsErrors(SolParser.DeclarationAssignContext ctx, String variableName)
+    {
+        boolean hasError = false;
+        if (this.functions.containsKey(variableName))
+        {
+            this.reporter.reportError(ctx, FUNCTION_ID_ERROR_MESSAGE);
+            hasError = true;
+        }
+        else if (this.scope.containsVariableLocal(variableName))
+        {
+            this.reporter.reportError(ctx, DECLARED_VAR_ERROR_MESSAGE);
+            hasError = true;
+        }
+        return hasError;
+    }
+
     private static boolean compatibleTypes(Class<?> variableType, Class<?> expressionType)
     {
         boolean isVariableDouble = variableType == Double.class;
@@ -327,13 +344,9 @@ public class solSemanticChecker extends SolBaseListener
     {
         if (ctx.IDENTIFIER() == null)
             return;
-
         String variableName = ctx.IDENTIFIER().getText();
-        if (!this.scope.containsVariable(variableName))
-        {
-            this.reporter.reportError(ctx, UNDECLARED_VAR_ERROR_MESSAGE);
+        if (this.checkVariableAssignmentErrors(ctx, variableName))
             return;
-        }
 
         Class<?> variableType = this.scope.getVariable(variableName).type();
         Class<?> exprType = this.annotatedTypes.get(ctx.expr());
@@ -344,6 +357,22 @@ public class solSemanticChecker extends SolBaseListener
             this.annotatedTypes.put(ctx, variableType);
         else
             this.reporter.reportError(ctx, TYPE_MISMATCH_ERROR_MESSAGE);
+    }
+
+    private boolean checkVariableAssignmentErrors(SolParser.AssignContext ctx, String variableName)
+    {
+        boolean hasError = false;
+        if (this.functions.containsKey(variableName))
+        {
+            this.reporter.reportError(ctx, FUNCTION_ID_ERROR_MESSAGE);
+            hasError = true;
+        }
+        else if (!this.scope.containsVariable(variableName))
+        {
+            this.reporter.reportError(ctx, UNDECLARED_VAR_ERROR_MESSAGE);
+            hasError = true;
+        }
+        return hasError;
     }
 
     @Override
@@ -484,7 +513,7 @@ public class solSemanticChecker extends SolBaseListener
            List<SolParser.ArgumentContext> args = ((SolParser.FunctionDeclarationContext) parent).argument();
            this.scope.offset(-args.size());
            args.forEach((arg) -> this.scope.putVariable(arg.IDENTIFIER().getText(), Value.typeOf(arg.type.getText())));
-            this.scope.offset(2);
+           this.scope.offset(2); // Offset to compensate for frame pointer and return address on execution stack
         }
     }
 

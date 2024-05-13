@@ -269,16 +269,7 @@ public class tVm
 
     private void executeReturnInstruction(Instruction instruction)
     {
-        if (this.callCount == 0)
-            this.genericError(instruction, "Can't return out of non existent call frame");
-        if (instruction.getOperand() < 0)
-            this.genericError(instruction, "Can't return from call frame with negative amount of arguments");
-        int minimumSize = instruction.getOperand() + 2;
-        minimumSize = instruction.getInstruction() == Instruction.Code.RETVAL ? minimumSize + 1 : minimumSize;
-        if (this.executionStack.size() < minimumSize)
-            this.insufficientStackError(instruction);
-        if (this.currentFrameCorrupted())
-            this.corruptedFrameError();
+        this.checkReturnErrors(instruction);
 
         Value returnValue = instruction.getInstruction() == Instruction.Code.RETVAL ? this.executionStack.pop() : null;
         while (this.executionStack.size() > this.framePointer + 2)
@@ -289,6 +280,20 @@ public class tVm
         if (returnValue != null)
             this.executionStack.push(returnValue);
         this.callCount--;
+    }
+
+    private void checkReturnErrors(Instruction instruction)
+    {
+        if (this.callCount == 0)
+            this.genericError(instruction, "Can't return out of non existent call frame");
+        if (instruction.getOperand() < 0)
+            this.genericError(instruction, "Can't return from call frame with negative amount of arguments");
+        int minimumSize = instruction.getOperand() + 2;
+        minimumSize = instruction.getInstruction() == Instruction.Code.RETVAL ? minimumSize + 1 : minimumSize;
+        if (this.executionStack.size() < minimumSize)
+            this.insufficientStackError(instruction);
+        if (this.currentFrameCorrupted())
+            this.corruptedFrameError();
     }
 
     private boolean currentFrameCorrupted()

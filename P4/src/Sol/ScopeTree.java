@@ -8,15 +8,12 @@ import java.util.List;
 
 public class ScopeTree implements Tree
 {
-    public record Variable(Class<?> type, int index, boolean global) {
-    }
+    public record Variable(Class<?> type, int index, boolean global){}
     private final HashMap<String, Variable> variables;
     private ScopeTree parent;
     private final List<ScopeTree> children;
-
     private int variableIndex;
     private int offset;
-
 
     public ScopeTree()
     {
@@ -34,22 +31,15 @@ public class ScopeTree implements Tree
         this.parent = parent;
         this.offset = this.parent == null ? 0 : this.parent.offset;
 
-        if(this.parent == null) return;
+        if (this.parent == null)
+            return;
 
-        if(this.parent.parent != null){
+        if (this.parent.parent != null)
             this.variableIndex = this.parent.variableIndex;
-        }
-
     }
 
-    public ScopeTree(ScopeTree parent, int offset)
+    public void offset(int offset)
     {
-        this();
-        this.parent = parent;
-        this.offset += offset;
-    }
-
-    public void offset(int offset){
         this.offset += offset;
     }
 
@@ -80,7 +70,7 @@ public class ScopeTree implements Tree
     public void putVariable(String identifier, Class<?> type)
     {
         boolean isRoot = this.parent == null;
-        this.variables.put(identifier, new Variable(type, (this.variableIndex++ + this.offset),isRoot));
+        this.variables.put(identifier, new Variable(type, (this.variableIndex++ + this.offset), isRoot));
     }
 
     public boolean containsVariableLocal(String identifier)
@@ -98,9 +88,11 @@ public class ScopeTree implements Tree
         return this.children.get(this.children.size() - 1);
     }
 
-    public int getVariableCount(){
+    public int getVariableCount()
+    {
         return this.variables.size();
     }
+
     @Override
     public Tree getParent()
     {

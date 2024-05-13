@@ -1,0 +1,12 @@
+				call _l2
+				halt
+_l2:			iconst 1
+				itod
+				dconst 3.14
+				call _l7
+				ret 0
+_l7:			lload -2
+				lload -1
+				dadd
+				dprint
+				ret 2

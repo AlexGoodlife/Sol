@@ -69,7 +69,10 @@ public class solFunctionChecker extends SolBaseListener
     @Override
     public void exitBlock(SolParser.BlockContext ctx)
     {
-        this.annotatedReturns.put(ctx, this.annotatedReturns.get(ctx.scope()));
+        Boolean hasReturned = this.annotatedReturns.get(ctx.scope());
+        if (hasReturned == null)
+            return;
+        this.annotatedReturns.put(ctx, hasReturned);
     }
 
     @Override
@@ -84,8 +87,11 @@ public class solFunctionChecker extends SolBaseListener
     @Override
     public void exitFunctionDeclaration(SolParser.FunctionDeclarationContext ctx)
     {
-        boolean isReturned = this.annotatedReturns.get(ctx.scope());
-        if (!isReturned && !Value.typeOf(ctx.type.getText()).equals(Void.class))
+        Boolean hasReturned = this.annotatedReturns.get(ctx.scope());
+        if (hasReturned == null)
+            return;
+        this.functions.get(ctx.IDENTIFIER().getText()).setHasGuaranteedReturn(hasReturned);
+        if (!hasReturned && !Value.typeOf(ctx.type.getText()).equals(Void.class))
             this.reporter.reportError(ctx, "Function might not always reach a return instruction");
     }
 

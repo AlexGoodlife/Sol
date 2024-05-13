@@ -41,15 +41,13 @@ public class solCompiler extends SolBaseVisitor<Void>
     private ArrayList<Instruction> instructions;
     private ConstantPool constantPool;
     private ParseTreeProperty<Class<?>> annotatedTypes;
-    private HashMap<String, Integer> variableIndices;
     private ScopeTree scope;
-    private Stack<Instruction> breaks;
-    private ErrorReporter reporter;
     private ParseTreeProperty<ScopeTree> scopeAnnotations;
+    private Stack<Instruction> breaks;
     private HashMap<String, Instruction> functionCalls;
     private HashMap<String, Function> functions;
-
     private Function currentFunction;
+    private ErrorReporter reporter;
 
     public solCompiler()
     {
@@ -59,24 +57,22 @@ public class solCompiler extends SolBaseVisitor<Void>
         this.generateTasmFile = DEFAULT_GENERATE_TASM_FILE;
     }
 
-    private void loadVariable(String identifier){
+    private void loadVariable(String identifier)
+    {
         ScopeTree.Variable var = this.scope.getVariable(identifier);
-        if(var.global()){
+        if (var.global())
             this.instructions.add(new Instruction(Instruction.Code.GLOAD, var.index()));
-        }
-        else{
+        else
             this.instructions.add(new Instruction(Instruction.Code.LLOAD, var.index()));
-        }
     }
 
-    private void storeVariable(String identifier){
+    private void storeVariable(String identifier)
+    {
         ScopeTree.Variable var = this.scope.getVariable(identifier);
-        if(var.global()){
+        if (var.global())
             this.instructions.add(new Instruction(Instruction.Code.GSTORE, var.index()));
-        }
-        else{
+        else
             this.instructions.add(new Instruction(Instruction.Code.LSTORE, var.index()));
-        }
     }
 
     @Override
@@ -280,9 +276,7 @@ public class solCompiler extends SolBaseVisitor<Void>
             if (this.annotatedTypes.get(ctx.getParent()) == Double.class && this.annotatedTypes.get(ctx.expr()) == Integer.class)
                 this.instructions.add(new Instruction(Instruction.Code.ITOD));
             this.storeVariable(ctx.IDENTIFIER().getText());
-            //this.instructions.add(new Instruction(Instruction.Code.GSTORE, this.variableIndices.size()));
         }
-        //this.variableIndices.put(ctx.IDENTIFIER().getText(), this.variableIndices.size()); // I think we no longer need to do this since we get the indexes on semantic check
         return null;
     }
 
@@ -310,7 +304,6 @@ public class solCompiler extends SolBaseVisitor<Void>
         if (this.annotatedTypes.get(ctx) == Double.class && this.annotatedTypes.get(ctx.expr()) == Integer.class)
             this.instructions.add(new Instruction(Instruction.Code.ITOD));
         this.storeVariable(ctx.IDENTIFIER().getText());
-        //this.instructions.add(new Instruction(Instruction.Code.GSTORE, this.variableIndices.get(ctx.IDENTIFIER().getText())));
         return null;
     }
 
@@ -340,9 +333,9 @@ public class solCompiler extends SolBaseVisitor<Void>
     public Void visitFor(SolParser.ForContext ctx)
     {
         this.visit(ctx.assign());
+
         int initialBreakCount = this.breaks.size();
         int loopStart = this.instructions.size();
-        //int variableIndex = this.variableIndices.get(ctx.assign().IDENTIFIER().getText());
         int variableIndex = this.scope.getVariable(ctx.assign().IDENTIFIER().getText()).index();
 
         this.visit(ctx.expr());
@@ -398,101 +391,118 @@ public class solCompiler extends SolBaseVisitor<Void>
     @Override
     public Void visitProgram(SolParser.ProgramContext ctx)
     {
-        if(!ctx.declaration().isEmpty()) {
-            Instruction globalAlloc = new Instruction(Instruction.Code.GALLOC, this.scope.getVariableCount());
-            this.instructions.add(globalAlloc);
-            for (SolParser.DeclarationContext declaration : ctx.declaration())
-                this.visit(declaration);
-        }
-        Instruction mainCall = new Instruction(Instruction.Code.CALL, Instruction.TO_DEFINE); // we trust that it will be backpatched
+        if (!ctx.declaration().isEmpty())
+            this.instructions.add(new Instruction(Instruction.Code.GALLOC, this.scope.getVariableCount()));
+
+        for (SolParser.DeclarationContext declaration : ctx.declaration())
+            this.visit(declaration);
+
+        Instruction mainCall = new Instruction(Instruction.Code.CALL, Instruction.TO_DEFINE); // we trust that it will be back-patched
         this.functionCalls.put("main", mainCall);
         this.instructions.add(mainCall);
         this.instructions.add(new Instruction(Instruction.Code.HALT));
 
         for (SolParser.FunctionDeclarationContext func : ctx.functionDeclaration())
             this.visit(func);
-        Instruction mainCheck = this.functionCalls.get("main");
-        if(mainCheck == null || mainCheck.getOperand() == Instruction.TO_DEFINE) throw new InternalError("Couldn't find main, something very wrong happened");
 
-        // TODO: Remove any Lalloc 0 and Galloc 0
+        Instruction mainCheck = this.functionCalls.get("main");
+        if (mainCheck.getOperand() == Instruction.TO_DEFINE)
+            throw new InternalError("Couldn't find main, something very wrong happened");
+
         return null;
     }
 
-    @Override public Void visitScope(SolParser.ScopeContext ctx){
+    @Override public Void visitScope(SolParser.ScopeContext ctx)
+    {
         this.scope = this.scopeAnnotations.get(ctx);
-        int sizeBeforeVisits = this.instructions.size();
         Instruction allocInstruction = new Instruction(Instruction.Code.LALLOC, Instruction.TO_DEFINE);
-        if(!ctx.declaration().isEmpty())
-            this.instructions.add(sizeBeforeVisits, allocInstruction);
+        if (!ctx.declaration().isEmpty())
+            this.instructions.add(allocInstruction);
 
         ctx.declaration().forEach(this::visit);
         ctx.instruction().forEach(this::visit);
         
-        if(!ctx.declaration().isEmpty()){
+        if (!ctx.declaration().isEmpty())
+        {
             int allocAmount = this.scope.getVariableCount();
-            if(ctx.getParent() instanceof SolParser.BlockContext)
-                this.instructions.add(new Instruction(Instruction.Code.POP,this.scope.getVariableCount()));
-            if(ctx.getParent() instanceof  SolParser.FunctionDeclarationContext parent){
-                allocAmount = allocAmount - this.functions.get(parent.IDENTIFIER().getText()).getArgTypes().size();
-            }
+            if (ctx.getParent() instanceof SolParser.BlockContext)
+                this.instructions.add(new Instruction(Instruction.Code.POP, allocAmount));
+            if(ctx.getParent() instanceof SolParser.FunctionDeclarationContext parent)
+                allocAmount -= this.functions.get(parent.IDENTIFIER().getText()).getArgTypes().size();
             allocInstruction.backPatch(allocAmount);
         }
         this.scope = (ScopeTree) this.scope.getParent(); // return scope to previous state
-       return null;
+        return null;
     }
     
     @Override
-    public Void visitFunctionDeclaration(SolParser.FunctionDeclarationContext ctx){
-        this.currentFunction = this.functions.get(ctx.IDENTIFIER().getText());
-        int currentInstructionSize = this.instructions.size();
-        visit(ctx.scope());
-        Instruction toJump = this.functionCalls.get(ctx.IDENTIFIER().getText());
-        if(toJump == null){
-            this.functionCalls.put(ctx.IDENTIFIER().getText(),new Instruction(Instruction.Code.CALL, currentInstructionSize));
-        }
-        else{
-            toJump.backPatch(currentInstructionSize);
-        }
+    public Void visitFunctionDeclaration(SolParser.FunctionDeclarationContext ctx)
+    {
+        String functionName = ctx.IDENTIFIER().getText();
+        Instruction call = this.functionCalls.get(functionName);
+        if (call == null)
+            this.functionCalls.put(functionName, new Instruction(Instruction.Code.CALL, this.instructions.size()));
+        else
+            call.backPatch(this.instructions.size());
+
+        this.currentFunction = this.functions.get(functionName);
+        this.visit(ctx.scope());
         /*
-         If function is void we must implicitly return from it always, if one already exists, don't bother
+         If function is void we must implicitly return from it always
          We could get our annotated returns from the function checker, don't know if its needed
          */
-
-        if(this.currentFunction.getReturnType().equals(Void.class) && this.instructions.get(this.instructions.size()-1).getInstruction() != Instruction.Code.RET)
-            this.instructions.add(new Instruction(Instruction.Code.RET,this.currentFunction.getArgTypes().size()));
+        if (this.currentFunction.getReturnType().equals(Void.class) && !this.currentFunction.hasGuaranteedReturn())
+            this.instructions.add(new Instruction(Instruction.Code.RET, this.currentFunction.getArgTypes().size()));
        return null;
     }
 
     @Override
-    public Void visitReturn(SolParser.ReturnContext ctx){
-        // Find what function we are in, we are going to use our previous hack in the semantic checker
-        if(ctx.expr() != null){
+    public Void visitReturn(SolParser.ReturnContext ctx)
+    {
+        if (ctx.expr() != null)
             visit(ctx.expr());
-        }
+
         Instruction.Code code = this.currentFunction.getReturnType().equals(Void.class) ? Instruction.Code.RET : Instruction.Code.RETVAL;
         this.instructions.add(new Instruction(code, this.currentFunction.getArgTypes().size()));
         return null;
     }
 
-    private void addFunctionJumps(String identifier){
-        Instruction toJump = this.functionCalls.get(identifier);
-
-        if(toJump == null){
-            Instruction newJump = new Instruction(Instruction.Code.CALL, Instruction.TO_DEFINE);
-            this.functionCalls.put(identifier, newJump);
-            toJump = newJump;
+    private void addFunctionJumps(String identifier)
+    {
+        Instruction call = this.functionCalls.get(identifier);
+        if (call == null)
+        {
+            Instruction newCall = new Instruction(Instruction.Code.CALL, Instruction.TO_DEFINE);
+            this.functionCalls.put(identifier, newCall);
+            call = newCall;
         }
-        this.instructions.add(toJump);
+        this.instructions.add(call);
     }
+
     @Override
-    public Void visitNonVoidFunctionCall(SolParser.NonVoidFunctionCallContext ctx){
-        ctx.expr().forEach(this::visit);
+    public Void visitNonVoidFunctionCall(SolParser.NonVoidFunctionCallContext ctx)
+    {
+        Function calledFunction = this.functions.get(ctx.IDENTIFIER().getText());
+        for (int i = 0; i < ctx.expr().size(); i++)
+        {
+            this.visit(ctx.expr(i));
+            if (calledFunction.getArgTypes().get(i) == Double.class && this.annotatedTypes.get(ctx.expr(i)) == Integer.class)
+                this.instructions.add(new Instruction(Instruction.Code.ITOD));
+        }
         this.addFunctionJumps(ctx.IDENTIFIER().getText());
         return null;
     }
+
     @Override
-    public Void visitVoidFunctionCall(SolParser.VoidFunctionCallContext ctx){
-        ctx.expr().forEach(this::visit);
+    public Void visitVoidFunctionCall(SolParser.VoidFunctionCallContext ctx)
+    {
+        Function calledFunction = this.functions.get(ctx.IDENTIFIER().getText());
+        for (int i = 0; i < ctx.expr().size(); i++)
+        {
+            this.visit(ctx.expr(i));
+            if (calledFunction.getArgTypes().get(i) == Double.class && this.annotatedTypes.get(ctx.expr(i)) == Integer.class)
+                this.instructions.add(new Instruction(Instruction.Code.ITOD));
+        }
         this.addFunctionJumps(ctx.IDENTIFIER().getText());
         return null;
     }
@@ -563,10 +573,9 @@ public class solCompiler extends SolBaseVisitor<Void>
         this.tree = this.parser.program();
         this.instructions = new ArrayList<>();
         this.constantPool = new ConstantPool();
-        this.variableIndices = new HashMap<>();
         this.breaks = new Stack<>();
-        this.reporter = new ErrorReporter();
         this.functionCalls = new HashMap<>();
+        this.reporter = new ErrorReporter();
     }
 
     private SolParser generateParser() throws IOException

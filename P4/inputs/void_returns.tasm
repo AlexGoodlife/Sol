@@ -1,0 +1,15 @@
+				call _l12
+				halt
+_l2:			tconst
+				jumpf _l7
+				tconst
+				bprint
+				jump _l8
+_l7:			ret 0
+_l8:			ret 0
+_l9:			sconst "Hello"
+				sprint
+				ret 0
+_l12:			call _l2
+				call _l9
+				ret 0
