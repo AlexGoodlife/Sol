@@ -1,4 +1,4 @@
-// Generated from /home/compl3x/Programations/cop_projeto/P4/src/Sol.g4 by ANTLR 4.13.1
+// Generated from C:/Users/Acer/Desktop/Programations/cop_projeto/P4/src/Sol.g4 by ANTLR 4.13.1
 package antlrSol;
 
 import org.antlr.v4.runtime.ParserRuleContext;
@@ -257,6 +257,18 @@ public class SolBaseListener implements SolListener {
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
+	@Override public void enterReference(SolParser.ReferenceContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitReference(SolParser.ReferenceContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
 	@Override public void enterNonVoidFunctionCall(SolParser.NonVoidFunctionCallContext ctx) { }
 	/**
 	 * {@inheritDoc}
@@ -384,6 +396,18 @@ public class SolBaseListener implements SolListener {
 	 * <p>The default implementation does nothing.</p>
 	 */
 	@Override public void exitParentheses(SolParser.ParenthesesContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void enterDereference(SolParser.DereferenceContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitDereference(SolParser.DereferenceContext ctx) { }
 
 	/**
 	 * {@inheritDoc}

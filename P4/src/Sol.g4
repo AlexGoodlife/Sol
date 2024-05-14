@@ -3,7 +3,7 @@ grammar Sol;
 program:    declaration* functionDeclaration+ EOF
             ;
 
-declaration:    type=(INT_T|DOUBLE_T|STRING_T|BOOLEAN_T) declarationAssign (',' declarationAssign)* EOL
+declaration:    type=(INT_T|DOUBLE_T|STRING_T|BOOLEAN_T) REF* declarationAssign (',' declarationAssign)* EOL
                 ;
 
 declarationAssign:  IDENTIFIER ('=' expr)?
@@ -12,7 +12,7 @@ declarationAssign:  IDENTIFIER ('=' expr)?
 functionDeclaration:    type=(INT_T|DOUBLE_T|STRING_T|BOOLEAN_T|VOID) IDENTIFIER LPAREN (argument (',' argument)*)? RPAREN scope
                         ;
 
-argument:   type=(INT_T|DOUBLE_T|STRING_T|BOOLEAN_T) IDENTIFIER
+argument:   type=(INT_T|DOUBLE_T|STRING_T|BOOLEAN_T) REF* IDENTIFIER
             ;
 
 scope:  BEGIN declaration* instruction* END
@@ -30,7 +30,7 @@ instruction:    PRINT expr EOL                                          #Print
                 | RETURN expr? EOL                                      #Return
                 ;
 
-assign: IDENTIFIER '=' expr
+assign: DREF* IDENTIFIER '=' expr
         ;
 
 expr:   LPAREN expr RPAREN                                      #Parentheses
@@ -47,6 +47,8 @@ expr:   LPAREN expr RPAREN                                      #Parentheses
         | BOOLEAN        		                                #Boolean
         | IDENTIFIER                                            #Identifier
         | IDENTIFIER LPAREN (expr (',' expr)*)? RPAREN          #NonVoidFunctionCall
+        | REF IDENTIFIER                                        #Reference
+        | DREF* IDENTIFIER                                      #Dereference
         ;
 
 //Language types
@@ -93,6 +95,8 @@ LET: '<=';
 NOT: 'not';
 AND: 'and';
 OR: 'or';
+REF: '&';
+DREF: '#';
 
 //Identifier
 IDENTIFIER: ('_'|LETTER)('_'|LETTER|DIGIT)*;

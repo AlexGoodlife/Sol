@@ -1,4 +1,4 @@
-// Generated from /home/compl3x/Programations/cop_projeto/P4/src/Sol.g4 by ANTLR 4.13.1
+// Generated from C:/Users/Acer/Desktop/Programations/cop_projeto/P4/src/Sol.g4 by ANTLR 4.13.1
 package antlrSol;
 import org.antlr.v4.runtime.tree.ParseTreeVisitor;
 
@@ -144,6 +144,13 @@ public interface SolVisitor<T> extends ParseTreeVisitor<T> {
 	 */
 	T visitAddSub(SolParser.AddSubContext ctx);
 	/**
+	 * Visit a parse tree produced by the {@code Reference}
+	 * labeled alternative in {@link SolParser#expr}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitReference(SolParser.ReferenceContext ctx);
+	/**
 	 * Visit a parse tree produced by the {@code NonVoidFunctionCall}
 	 * labeled alternative in {@link SolParser#expr}.
 	 * @param ctx the parse tree
@@ -220,4 +227,11 @@ public interface SolVisitor<T> extends ParseTreeVisitor<T> {
 	 * @return the visitor result
 	 */
 	T visitParentheses(SolParser.ParenthesesContext ctx);
+	/**
+	 * Visit a parse tree produced by the {@code Dereference}
+	 * labeled alternative in {@link SolParser#expr}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitDereference(SolParser.DereferenceContext ctx);
 }

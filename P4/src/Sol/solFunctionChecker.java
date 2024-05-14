@@ -1,7 +1,6 @@
 package Sol;
 
 import ErrorUtils.ErrorReporter;
-import Tasm.Value;
 import antlrSol.*;
 import org.antlr.v4.runtime.ParserRuleContext;
 import org.antlr.v4.runtime.tree.*;
@@ -34,10 +33,10 @@ public class solFunctionChecker extends SolBaseListener
     public void enterFunctionDeclaration(SolParser.FunctionDeclarationContext ctx)
     {
         String id = ctx.IDENTIFIER().getText();
-        Class<?> returnType = Value.typeOf(ctx.type.getText());
-        List<Class<?>> argTypes = new ArrayList<>();
-        ctx.argument().forEach((T) -> argTypes.add(Value.typeOf(T.type.getText())));
-        if (id.equals("main") && returnType == Void.class && argTypes.isEmpty())
+        Type returnType = Type.typeOf(ctx.type.getText(), 0);
+        List<Type> argTypes = new ArrayList<>();
+        ctx.argument().forEach((T) -> argTypes.add(Type.typeOf(T.type.getText(), T.REF().size())));
+        if (id.equals("main") && returnType.type() == Void.class && argTypes.isEmpty())
             this.hasMain = true;
         Function function = new Function(returnType, argTypes);
         if (this.functions.containsKey(id))
@@ -90,8 +89,9 @@ public class solFunctionChecker extends SolBaseListener
         Boolean hasReturned = this.annotatedReturns.get(ctx.scope());
         if (hasReturned == null)
             return;
-        this.functions.get(ctx.IDENTIFIER().getText()).setHasGuaranteedReturn(hasReturned);
-        if (!hasReturned && !Value.typeOf(ctx.type.getText()).equals(Void.class))
+        Function currentFunction = this.functions.get(ctx.IDENTIFIER().getText());
+        currentFunction.setHasGuaranteedReturn(hasReturned);
+        if (!hasReturned && !currentFunction.getReturnType().type().equals(Void.class))
             this.reporter.reportError(ctx, "Function might not always reach a return instruction");
     }
 

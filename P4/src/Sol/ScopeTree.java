@@ -8,7 +8,7 @@ import java.util.List;
 
 public class ScopeTree implements Tree
 {
-    public record Variable(Class<?> type, int index, boolean global){}
+    public record Variable(Type type, int index, boolean global){}
     private final HashMap<String, Variable> variables;
     private ScopeTree parent;
     private final List<ScopeTree> children;
@@ -67,7 +67,7 @@ public class ScopeTree implements Tree
         return getVariableRecursive(this, identifier);
     }
 
-    public void putVariable(String identifier, Class<?> type)
+    public void putVariable(String identifier, Type type)
     {
         boolean isRoot = this.parent == null;
         this.variables.put(identifier, new Variable(type, (this.variableIndex++ + this.offset), isRoot));

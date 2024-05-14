@@ -40,7 +40,7 @@ public class solCompiler extends SolBaseVisitor<Void>
     private ParseTree tree;
     private ArrayList<Instruction> instructions;
     private ConstantPool constantPool;
-    private ParseTreeProperty<Class<?>> annotatedTypes;
+    private ParseTreeProperty<Type> annotatedTypes;
     private ScopeTree scope;
     private ParseTreeProperty<ScopeTree> scopeAnnotations;
     private Stack<Instruction> breaks;
@@ -141,8 +141,8 @@ public class solCompiler extends SolBaseVisitor<Void>
     * As such we throw an InternalError if such ever occurs */
     private Class<?> visitNodesWithTypeConversionChecking(SolParser.ExprContext firstToVisit, SolParser.ExprContext secondToVisit)
     {
-        Class<?> firstType = this.annotatedTypes.get(firstToVisit);
-        Class<?> secondType = this.annotatedTypes.get(secondToVisit);
+        Class<?> firstType = this.annotatedTypes.get(firstToVisit).type();
+        Class<?> secondType = this.annotatedTypes.get(secondToVisit).type();
         Class<?> type = firstType == secondType ? firstType : null;
 
         this.visit(firstToVisit);
@@ -256,7 +256,7 @@ public class solCompiler extends SolBaseVisitor<Void>
     public Void visitNegation(SolParser.NegationContext ctx)
     {
         this.visit(ctx.expr());
-        Class<?> exprType = this.annotatedTypes.get(ctx.expr());
+        Class<?> exprType = this.annotatedTypes.get(ctx.expr()).type();
 
         if (exprType == Integer.class)
             this.instructions.add(new Instruction(Instruction.Code.IUMINUS));
@@ -268,12 +268,14 @@ public class solCompiler extends SolBaseVisitor<Void>
         return null;
     }
 
+    //TODO A MINHA MAE
+
     public Void visitDeclarationAssign(SolParser.DeclarationAssignContext ctx)
     {
         if (ctx.expr() != null)
         {
             this.visit(ctx.expr());
-            if (this.annotatedTypes.get(ctx.getParent()) == Double.class && this.annotatedTypes.get(ctx.expr()) == Integer.class)
+            if (this.annotatedTypes.get(ctx.getParent()).type() == Double.class && this.annotatedTypes.get(ctx.expr()).type() == Integer.class)
                 this.instructions.add(new Instruction(Instruction.Code.ITOD));
             this.storeVariable(ctx.IDENTIFIER().getText());
         }
@@ -285,7 +287,7 @@ public class solCompiler extends SolBaseVisitor<Void>
     {
         this.visit(ctx.expr());
 
-        Class<?> exprType = this.annotatedTypes.get(ctx.expr());
+        Class<?> exprType = this.annotatedTypes.get(ctx.expr()).type();
         if (exprType == Integer.class)
             this.instructions.add(new Instruction(Instruction.Code.IPRINT));
         else if (exprType == Double.class)
@@ -301,7 +303,7 @@ public class solCompiler extends SolBaseVisitor<Void>
     public Void visitAssign(SolParser.AssignContext ctx)
     {
         this.visit(ctx.expr());
-        if (this.annotatedTypes.get(ctx) == Double.class && this.annotatedTypes.get(ctx.expr()) == Integer.class)
+        if (this.annotatedTypes.get(ctx).type() == Double.class && this.annotatedTypes.get(ctx.expr()).type() == Integer.class)
             this.instructions.add(new Instruction(Instruction.Code.ITOD));
         this.storeVariable(ctx.IDENTIFIER().getText());
         return null;
@@ -448,7 +450,7 @@ public class solCompiler extends SolBaseVisitor<Void>
         this.currentFunction = this.functions.get(functionName);
         this.visit(ctx.scope());
 
-        if (this.currentFunction.getReturnType().equals(Void.class) && !this.currentFunction.hasGuaranteedReturn())
+        if (this.currentFunction.getReturnType().type() == Void.class && !this.currentFunction.hasGuaranteedReturn())
             this.instructions.add(new Instruction(Instruction.Code.RET, this.currentFunction.getArgTypes().size()));
        return null;
     }
@@ -459,7 +461,7 @@ public class solCompiler extends SolBaseVisitor<Void>
         if (ctx.expr() != null)
             visit(ctx.expr());
 
-        Instruction.Code code = this.currentFunction.getReturnType().equals(Void.class) ? Instruction.Code.RET : Instruction.Code.RETVAL;
+        Instruction.Code code = this.currentFunction.getReturnType().type() == Void.class ? Instruction.Code.RET : Instruction.Code.RETVAL;
         this.instructions.add(new Instruction(code, this.currentFunction.getArgTypes().size()));
         return null;
     }
@@ -483,7 +485,7 @@ public class solCompiler extends SolBaseVisitor<Void>
         for (int i = 0; i < ctx.expr().size(); i++)
         {
             this.visit(ctx.expr(i));
-            if (calledFunction.getArgTypes().get(i) == Double.class && this.annotatedTypes.get(ctx.expr(i)) == Integer.class)
+            if (calledFunction.getArgTypes().get(i).type() == Double.class && this.annotatedTypes.get(ctx.expr(i)).type() == Integer.class)
                 this.instructions.add(new Instruction(Instruction.Code.ITOD));
         }
         this.addFunctionJumps(ctx.IDENTIFIER().getText());
@@ -497,7 +499,7 @@ public class solCompiler extends SolBaseVisitor<Void>
         for (int i = 0; i < ctx.expr().size(); i++)
         {
             this.visit(ctx.expr(i));
-            if (calledFunction.getArgTypes().get(i) == Double.class && this.annotatedTypes.get(ctx.expr(i)) == Integer.class)
+            if (calledFunction.getArgTypes().get(i).type() == Double.class && this.annotatedTypes.get(ctx.expr(i)).type() == Integer.class)
                 this.instructions.add(new Instruction(Instruction.Code.ITOD));
         }
         this.addFunctionJumps(ctx.IDENTIFIER().getText());

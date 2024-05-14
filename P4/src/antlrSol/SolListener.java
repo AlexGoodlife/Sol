@@ -1,4 +1,4 @@
-// Generated from /home/compl3x/Programations/cop_projeto/P4/src/Sol.g4 by ANTLR 4.13.1
+// Generated from C:/Users/Acer/Desktop/Programations/cop_projeto/P4/src/Sol.g4 by ANTLR 4.13.1
 package antlrSol;
 import org.antlr.v4.runtime.tree.ParseTreeListener;
 
@@ -234,6 +234,18 @@ public interface SolListener extends ParseTreeListener {
 	 */
 	void exitAddSub(SolParser.AddSubContext ctx);
 	/**
+	 * Enter a parse tree produced by the {@code Reference}
+	 * labeled alternative in {@link SolParser#expr}.
+	 * @param ctx the parse tree
+	 */
+	void enterReference(SolParser.ReferenceContext ctx);
+	/**
+	 * Exit a parse tree produced by the {@code Reference}
+	 * labeled alternative in {@link SolParser#expr}.
+	 * @param ctx the parse tree
+	 */
+	void exitReference(SolParser.ReferenceContext ctx);
+	/**
 	 * Enter a parse tree produced by the {@code NonVoidFunctionCall}
 	 * labeled alternative in {@link SolParser#expr}.
 	 * @param ctx the parse tree
@@ -365,4 +377,16 @@ public interface SolListener extends ParseTreeListener {
 	 * @param ctx the parse tree
 	 */
 	void exitParentheses(SolParser.ParenthesesContext ctx);
+	/**
+	 * Enter a parse tree produced by the {@code Dereference}
+	 * labeled alternative in {@link SolParser#expr}.
+	 * @param ctx the parse tree
+	 */
+	void enterDereference(SolParser.DereferenceContext ctx);
+	/**
+	 * Exit a parse tree produced by the {@code Dereference}
+	 * labeled alternative in {@link SolParser#expr}.
+	 * @param ctx the parse tree
+	 */
+	void exitDereference(SolParser.DereferenceContext ctx);
 }

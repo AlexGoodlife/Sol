@@ -4,23 +4,26 @@ import java.util.List;
 
 public class Function
 {
-    private final Class<?> returnType;
-    private final List<Class<?>> argTypes;
+    private final Type returnType;
+    private final List<Type> argTypes;
     private boolean hasGuaranteedReturn;
 
-    public Function(Class<?> returnType, List<Class<?>> argTypes)
+    public Function(Type returnType, List<Type> argTypes)
     {
+        if (returnType.refDepth() != 0)
+            throw new InternalError("Shouldn't happen");
+
         this.returnType = returnType;
         this.argTypes = argTypes;
         this.hasGuaranteedReturn = false;
     }
 
-    public Class<?> getReturnType()
+    public Type getReturnType()
     {
         return this.returnType;
     }
 
-    public List<Class<?>> getArgTypes()
+    public List<Type> getArgTypes()
     {
         return this.argTypes;
     }

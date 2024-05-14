@@ -1,4 +1,4 @@
-// Generated from /home/compl3x/Programations/cop_projeto/P4/src/Sol.g4 by ANTLR 4.13.1
+// Generated from C:/Users/Acer/Desktop/Programations/cop_projeto/P4/src/Sol.g4 by ANTLR 4.13.1
 package antlrSol;
 import org.antlr.v4.runtime.tree.AbstractParseTreeVisitor;
 
@@ -158,6 +158,13 @@ public class SolBaseVisitor<T> extends AbstractParseTreeVisitor<T> implements So
 	 * <p>The default implementation returns the result of calling
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
+	@Override public T visitReference(SolParser.ReferenceContext ctx) { return visitChildren(ctx); }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation returns the result of calling
+	 * {@link #visitChildren} on {@code ctx}.</p>
+	 */
 	@Override public T visitNonVoidFunctionCall(SolParser.NonVoidFunctionCallContext ctx) { return visitChildren(ctx); }
 	/**
 	 * {@inheritDoc}
@@ -229,4 +236,11 @@ public class SolBaseVisitor<T> extends AbstractParseTreeVisitor<T> implements So
 	 * {@link #visitChildren} on {@code ctx}.</p>
 	 */
 	@Override public T visitParentheses(SolParser.ParenthesesContext ctx) { return visitChildren(ctx); }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation returns the result of calling
+	 * {@link #visitChildren} on {@code ctx}.</p>
+	 */
+	@Override public T visitDereference(SolParser.DereferenceContext ctx) { return visitChildren(ctx); }
 }
