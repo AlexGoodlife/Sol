@@ -18,6 +18,8 @@ public class tVm
     private static final String DEFAULT_BYTECODES_FILE_NAME = null;
     private static final boolean DEFAULT_SHOW_TRACE = false;
 
+    private static final int MAX_STACK_SIZE = 1048576; //1MB in bytes
+
     private String byteCodesFileName;
     private boolean showTrace;
 
@@ -144,6 +146,9 @@ public class tVm
             if (this.showTrace)
                 this.printTrace(currentInstruction);
             this.executeInstruction(currentInstruction);
+
+            if (this.executionStack.size() > MAX_STACK_SIZE)
+                this.genericError(currentInstruction, "Execution stack ran out of memory");
         }
 
         //If it reaches the end without halting it means no halt was encountered, throw error
@@ -199,7 +204,7 @@ public class tVm
         List<Value> selectedMemoryChunk = this.selectMemoryChunk(instruction);
         int index = this.calculateMemoryIndex(instruction);
         if (index < 0 || index >= selectedMemoryChunk.size())
-            this.indexOutOfBoundsError(instruction, selectedMemoryChunk.size());
+            this.indexOutOfBoundsError(instruction, selectedMemoryChunk.size(), instruction.getOperand());
 
         switch (instruction.getInstruction())
         {
@@ -258,6 +263,7 @@ public class tVm
                 else
                     this.typeError(instruction, String.class);
             }
+            case RPRINT, LDREF, LREF -> this.executeReferenceStackInstruction(this.executionStack.pop(), instruction);
             default -> this.executeTwoOperandsInstruction(instruction);
         }
     }
@@ -333,6 +339,7 @@ public class tVm
         else
             this.typeError(instruction, Double.class);
     }
+
     private void executeBooleanStackInstruction(Value popped, Instruction instruction)
     {
         if (popped.getValue() instanceof Boolean poppedBoolean)
@@ -349,6 +356,23 @@ public class tVm
                     if (!poppedBoolean)
                         this.instructionPointer = instruction.getOperand();
                 }
+            }
+        else
+            this.typeError(instruction, Boolean.class);
+    }
+
+    private void executeReferenceStackInstruction(Value popped, Instruction instruction)
+    {
+        if (popped.getValue() instanceof Integer poppedReference)
+            switch (instruction.getInstruction())
+            {
+                case RPRINT -> System.out.printf("0x%08X%n\n", poppedReference);
+                case LDREF -> {
+                    if (poppedReference < 0 || poppedReference >= this.executionStack.size())
+                        this.indexOutOfBoundsError(instruction, this.executionStack.size(), poppedReference);
+                    this.executionStack.push(this.executionStack.get(poppedReference));
+                }
+                case LREF -> this.executionStack.push(new Value(this.framePointer + poppedReference));
             }
         else
             this.typeError(instruction, Boolean.class);
@@ -458,11 +482,10 @@ public class tVm
         RuntimeError.dispatchError(message);
     }
 
-    private void indexOutOfBoundsError(Instruction instruction, int size)
+    private void indexOutOfBoundsError(Instruction instruction, int size, int index)
     {
         String message = this.instructionPointer + ":0 " +
-                "Index " + instruction.getOperand() +
-                " out of bounds for size " +
+                "Index " + index + " out of bounds for size " +
                 size + " '" + instruction + "'";
         RuntimeError.dispatchError(message);
     }

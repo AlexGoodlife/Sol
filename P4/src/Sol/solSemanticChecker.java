@@ -21,6 +21,7 @@ public class solSemanticChecker extends SolBaseListener
     private static final String VOID_RETURN_VALUE_ERROR_MESSAGE = "Void function in an expression";
     private static final String FUNCTION_ID_ERROR_MESSAGE = "Identifier is not a variable";
     private static final String POINTER_OPERATION_ERROR_MESSAGE = "Pointer operation is not allowed";
+    private static final String DEREFERENCE_NON_POINTER_ERROR_MESSAGE = "Dereferencing non pointer variable";
 
     private final ErrorReporter reporter;
     private final ParseTreeProperty<Type> annotatedTypes;
@@ -91,12 +92,47 @@ public class solSemanticChecker extends SolBaseListener
     {
         String variableName = ctx.IDENTIFIER().getText();
         ScopeTree.Variable var = this.scope.getVariable(variableName);
+        if (this.checkIdentifierError(ctx, variableName, var))
+            return;
+        this.annotatedTypes.put(ctx, var.scopedType());
+    }
+
+    private boolean checkIdentifierError(SolParser.ExprContext ctx, String variableName, ScopeTree.Variable var)
+    {
+        int initialErrorCount = this.reporter.getErrorCount();
+
         if (this.functions.containsKey(variableName))
             this.reporter.reportError(ctx, FUNCTION_ID_ERROR_MESSAGE);
         else if (var == null)
             this.reporter.reportError(ctx, UNDECLARED_VAR_ERROR_MESSAGE);
-        else
-            this.annotatedTypes.put(ctx, var.type());
+
+        return this.reporter.getErrorCount() > initialErrorCount;
+    }
+
+    @Override
+    public void exitReference(SolParser.ReferenceContext ctx)
+    {
+        String variableName = ctx.IDENTIFIER().getText();
+        ScopeTree.Variable var = this.scope.getVariable(variableName);
+        if (this.checkIdentifierError(ctx, variableName, var))
+            return;
+        this.annotatedTypes.put(ctx, new Type(var.scopedType().type(), var.scopedType().refDepth() + 1));
+    }
+
+    @Override
+    public void exitDereference(SolParser.DereferenceContext ctx)
+    {
+        String variableName = ctx.IDENTIFIER().getText();
+        ScopeTree.Variable var = this.scope.getVariable(variableName);
+        if (this.checkIdentifierError(ctx, variableName, var))
+            return;
+        if (ctx.DREF().size() > var.scopedType().refDepth())
+        {
+            this.reporter.reportError(ctx, DEREFERENCE_NON_POINTER_ERROR_MESSAGE);
+            return;
+        }
+
+        this.annotatedTypes.put(ctx, new Type(var.scopedType().type(), var.scopedType().refDepth() - 1));
     }
 
     @Override
@@ -371,8 +407,14 @@ public class solSemanticChecker extends SolBaseListener
         String variableName = ctx.IDENTIFIER().getText();
         if (this.checkVariableAssignmentErrors(ctx, variableName))
             return;
+        Type variableType = this.scope.getVariable(variableName).scopedType();
+        if (ctx.DREF().size() > variableType.refDepth())
+        {
+            this.reporter.reportError(ctx, DEREFERENCE_NON_POINTER_ERROR_MESSAGE);
+            return;
+        }
 
-        Type variableType = this.scope.getVariable(variableName).type();
+        variableType = ctx.DREF().isEmpty() ? variableType : new Type(variableType.type(), variableType.refDepth() - ctx.DREF().size());
         Type exprType = this.annotatedTypes.get(ctx.expr());
         if (exprType == null)
             return;

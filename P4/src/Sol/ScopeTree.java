@@ -8,7 +8,7 @@ import java.util.List;
 
 public class ScopeTree implements Tree
 {
-    public record Variable(Type type, int index, boolean global){}
+    public record Variable(Type scopedType, int index, boolean global){}
     private final HashMap<String, Variable> variables;
     private ScopeTree parent;
     private final List<ScopeTree> children;

@@ -1,4 +1,4 @@
-// Generated from /home/compl3x/Programations/cop_projeto/P3/src/Tasm.g4 by ANTLR 4.13.1
+// Generated from C:/Users/Acer/Desktop/Programations/cop_projeto/P4/src/Tasm.g4 by ANTLR 4.13.1
 package antlrTasm;
 
 import org.antlr.v4.runtime.ParserRuleContext;
