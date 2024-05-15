@@ -55,7 +55,7 @@ SIMPLE_INSTRUCTION: //Int instructions
                     //Bool instructions
                     | 'tconst' | 'fconst' | 'bprint' | 'beq' | 'bneq' | 'and' | 'or' | 'not' | 'btos'
                     //Reference instructions
-                    | 'rprint' | 'ldref' | 'lref'
+                    | 'rprint' | 'gref' | 'lref' | 'dref' | 'refstore'
                     //Halt instruction
                     | 'halt'
                     ;

@@ -1,0 +1,120 @@
+				galloc 2
+				iconst 20
+				gstore 1
+				call _l41
+				halt
+_l5:			lalloc 1
+				lload -2
+				dref
+				lstore 2
+				lload -1
+				dref
+				iconst -2
+				lref
+				dref
+				refstore
+				lload 2
+				iconst -1
+				lref
+				dref
+				refstore
+				ret 2
+_l21:			lalloc 1
+				lload -2
+				dref
+				dref
+				lstore 2
+				lload -1
+				dref
+				dref
+				iconst -2
+				lref
+				dref
+				dref
+				refstore
+				lload 2
+				iconst -1
+				lref
+				dref
+				dref
+				refstore
+				ret 2
+_l41:			lalloc 4
+				iconst 1
+				lstore 2
+				iconst 10
+				lstore 3
+				iconst 2
+				lref
+				lstore 4
+				iconst 3
+				lref
+				lstore 5
+				lload 2
+				iprint
+				iconst 2
+				lref
+				rprint
+				lload 4
+				rprint
+				iconst 4
+				lref
+				gstore 0
+				gload 0
+				rprint
+				gload 0
+				dref
+				rprint
+				gload 0
+				dref
+				dref
+				iprint
+				sconst "global: "
+				gload 1
+				itos
+				sadd
+				sconst " x: "
+				sadd
+				lload 2
+				itos
+				sadd
+				sprint
+				iconst 1
+				gref
+				lload 4
+				call _l5
+				sconst "global: "
+				gload 1
+				itos
+				sadd
+				sconst " x: "
+				sadd
+				lload 2
+				itos
+				sadd
+				sprint
+				sconst "x: "
+				lload 2
+				itos
+				sadd
+				sconst " y: "
+				sadd
+				lload 3
+				itos
+				sadd
+				sprint
+				gload 0
+				iconst 5
+				lref
+				call _l21
+				sconst "x: "
+				lload 2
+				itos
+				sadd
+				sconst " y: "
+				sadd
+				lload 3
+				itos
+				sadd
+				sprint
+				ret 0

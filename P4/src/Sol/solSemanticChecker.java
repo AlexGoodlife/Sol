@@ -132,7 +132,7 @@ public class solSemanticChecker extends SolBaseListener
             return;
         }
 
-        this.annotatedTypes.put(ctx, new Type(var.scopedType().type(), var.scopedType().refDepth() - 1));
+        this.annotatedTypes.put(ctx, new Type(var.scopedType().type(), var.scopedType().refDepth() - ctx.DREF().size()));
     }
 
     @Override

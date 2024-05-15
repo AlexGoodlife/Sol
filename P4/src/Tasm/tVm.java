@@ -194,8 +194,8 @@ public class tVm
 
         switch (instruction.getInstruction())
         {
-            case GALLOC -> IntStream.range(0, instruction.getOperand()).forEach(index -> this.globalMemory.add(new Value(null)));
-            case LALLOC -> IntStream.range(0, instruction.getOperand()).forEach(index -> this.executionStack.push(new Value(null)));
+            case GALLOC -> IntStream.range(0, instruction.getOperand()).forEach(i -> this.globalMemory.add(new Value(null)));
+            case LALLOC -> IntStream.range(0, instruction.getOperand()).forEach(i -> this.executionStack.push(new Value(null)));
         }
     }
 
@@ -254,7 +254,7 @@ public class tVm
                 IntStream.range(0, instruction.getOperand()).forEach(i -> this.executionStack.pop());
             }
             case RETVAL, RET -> this.executeReturnInstruction(instruction);
-            case IPRINT, IUMINUS, ITOD, ITOS -> this.executeIntStackInstruction(this.executionStack.pop(), instruction);
+            case IPRINT, IUMINUS, ITOD, ITOS, GREF, LREF -> this.executeIntStackInstruction(this.executionStack.pop(), instruction);
             case DPRINT, DUMINUS, DTOS -> this.executeDoubleStackInstruction(this.executionStack.pop(), instruction);
             case BPRINT, NOT, BTOS, JUMPT, JUMPF -> this.executeBooleanStackInstruction(this.executionStack.pop(), instruction);
             case SPRINT -> {
@@ -263,7 +263,7 @@ public class tVm
                 else
                     this.typeError(instruction, String.class);
             }
-            case RPRINT, LDREF, LREF -> this.executeReferenceStackInstruction(this.executionStack.pop(), instruction);
+            case RPRINT, DREF -> this.executeAddressStackInstruction(this.executionStack.pop(), instruction);
             default -> this.executeTwoOperandsInstruction(instruction);
         }
     }
@@ -322,6 +322,8 @@ public class tVm
                 case IUMINUS -> this.executionStack.push(new Value(-poppedInt));
                 case ITOD -> this.executionStack.push(new Value((double) poppedInt));
                 case ITOS -> this.executionStack.push(new Value(String.valueOf(poppedInt)));
+                case GREF -> this.executionStack.push(new Value(new Address(poppedInt, true)));
+                case LREF -> this.executionStack.push(new Value(new Address(this.framePointer + poppedInt, false)));
             }
         else
             this.typeError(instruction, Integer.class);
@@ -361,21 +363,23 @@ public class tVm
             this.typeError(instruction, Boolean.class);
     }
 
-    private void executeReferenceStackInstruction(Value popped, Instruction instruction)
+    public record Address(int address, boolean isGlobal){}
+
+    private void executeAddressStackInstruction(Value popped, Instruction instruction)
     {
-        if (popped.getValue() instanceof Integer poppedReference)
+        if (popped.getValue() instanceof Address poppedAddress)
             switch (instruction.getInstruction())
             {
-                case RPRINT -> System.out.printf("0x%08X%n\n", poppedReference);
-                case LDREF -> {
-                    if (poppedReference < 0 || poppedReference >= this.executionStack.size())
-                        this.indexOutOfBoundsError(instruction, this.executionStack.size(), poppedReference);
-                    this.executionStack.push(this.executionStack.get(poppedReference));
+                case RPRINT -> System.out.printf("0x%08X%n", poppedAddress.address);
+                case DREF -> {
+                    List<Value> selectedMemoryChunk = poppedAddress.isGlobal ? this.globalMemory : this.executionStack;
+                    if (poppedAddress.address < 0 || poppedAddress.address >= selectedMemoryChunk.size())
+                        this.indexOutOfBoundsError(instruction, this.executionStack.size(), poppedAddress.address);
+                    this.executionStack.push(selectedMemoryChunk.get(poppedAddress.address));
                 }
-                case LREF -> this.executionStack.push(new Value(this.framePointer + poppedReference));
             }
         else
-            this.typeError(instruction, Boolean.class);
+            this.typeError(instruction, Address.class);
     }
 
     private void executeTwoOperandsInstruction(Instruction instruction)
@@ -383,14 +387,25 @@ public class tVm
         if (this.executionStack.size() < 2)
             this.insufficientStackError(instruction);
 
-        Value right = this.executionStack.pop();
-        Value left = this.executionStack.pop();
+        Value first = this.executionStack.pop();
+        Value second = this.executionStack.pop();
         switch (instruction.getInstruction())
         {
-            case IADD, ISUB, IMULT, IDIV, IMOD, IEQ, INEQ, ILEQ, ILT -> this.executeIntStackInstruction(left, right, instruction);
-            case DADD, DSUB, DMULT, DDIV, DEQ, DNEQ, DLEQ, DLT -> this.executeDoubleStackInstruction(left, right, instruction);
-            case SNEQ, SADD, SEQ -> this.executeStringStackInstruction(left, right, instruction);
-            case BEQ, BNEQ, AND, OR -> this.executeBooleanStackInstruction(left, right, instruction);
+            case IADD, ISUB, IMULT, IDIV, IMOD, IEQ, INEQ, ILEQ, ILT -> this.executeIntStackInstruction(second, first, instruction);
+            case DADD, DSUB, DMULT, DDIV, DEQ, DNEQ, DLEQ, DLT -> this.executeDoubleStackInstruction(second, first, instruction);
+            case SNEQ, SADD, SEQ -> this.executeStringStackInstruction(second, first, instruction);
+            case BEQ, BNEQ, AND, OR -> this.executeBooleanStackInstruction(second, first, instruction);
+            case REFSTORE -> {
+                if (!(first.getValue() instanceof Address))
+                    this.typeError(instruction, Address.class);
+
+                Address poppedAddress = (Address) first.getValue();
+                List<Value> selectedMemoryChunk = poppedAddress.isGlobal ? this.globalMemory : this.executionStack;
+                if (poppedAddress.address < 0 || poppedAddress.address >= selectedMemoryChunk.size())
+                    this.indexOutOfBoundsError(instruction, this.executionStack.size(), poppedAddress.address);
+
+                selectedMemoryChunk.set(poppedAddress.address, second);
+            }
         }
     }
 

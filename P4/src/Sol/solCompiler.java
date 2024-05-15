@@ -268,7 +268,31 @@ public class solCompiler extends SolBaseVisitor<Void>
         return null;
     }
 
-    //TODO A MINHA MAE
+    public Void visitReference(SolParser.ReferenceContext ctx)
+    {
+        ScopeTree.Variable var = this.scope.getVariable(ctx.IDENTIFIER().getText());
+        this.loadReference(var);
+
+        return null;
+    }
+
+    private void loadReference(ScopeTree.Variable var)
+    {
+        this.instructions.add(new Instruction(Instruction.Code.ICONST, var.index()));
+        if (var.global())
+            this.instructions.add(new Instruction(Instruction.Code.GREF));
+        else
+            this.instructions.add(new Instruction(Instruction.Code.LREF));
+    }
+
+    public Void visitDereference(SolParser.DereferenceContext ctx)
+    {
+        this.loadVariable(ctx.IDENTIFIER().getText());
+        for (TerminalNode ignored : ctx.DREF())
+            this.instructions.add(new Instruction(Instruction.Code.DREF));
+
+        return null;
+    }
 
     public Void visitDeclarationAssign(SolParser.DeclarationAssignContext ctx)
     {
@@ -287,14 +311,16 @@ public class solCompiler extends SolBaseVisitor<Void>
     {
         this.visit(ctx.expr());
 
-        Class<?> exprType = this.annotatedTypes.get(ctx.expr()).type();
-        if (exprType == Integer.class)
+        Type exprType = this.annotatedTypes.get(ctx.expr());
+        if (exprType.isRef())
+            this.instructions.add(new Instruction(Instruction.Code.RPRINT));
+        else if (exprType.type() == Integer.class)
             this.instructions.add(new Instruction(Instruction.Code.IPRINT));
-        else if (exprType == Double.class)
+        else if (exprType.type() == Double.class)
             this.instructions.add(new Instruction(Instruction.Code.DPRINT));
-        else if (exprType == String.class)
+        else if (exprType.type() == String.class)
             this.instructions.add(new Instruction(Instruction.Code.SPRINT));
-        else if (exprType == Boolean.class)
+        else if (exprType.type() == Boolean.class)
             this.instructions.add(new Instruction(Instruction.Code.BPRINT));
 
         return null;
@@ -303,10 +329,28 @@ public class solCompiler extends SolBaseVisitor<Void>
     public Void visitAssign(SolParser.AssignContext ctx)
     {
         this.visit(ctx.expr());
-        if (this.annotatedTypes.get(ctx).type() == Double.class && this.annotatedTypes.get(ctx.expr()).type() == Integer.class)
+        ScopeTree.Variable var = this.scope.getVariable(ctx.IDENTIFIER().getText());
+        Type exprType = this.annotatedTypes.get(ctx.expr());
+        boolean isVariableDouble = var.scopedType().type() == Double.class;
+        boolean isExprInteger = exprType.type() == Integer.class;
+        boolean isNotRef = !var.scopedType().isRef() || !exprType.isRef();
+        if (isVariableDouble && isExprInteger && isNotRef)
             this.instructions.add(new Instruction(Instruction.Code.ITOD));
-        this.storeVariable(ctx.IDENTIFIER().getText());
+
+        if (ctx.DREF().isEmpty())
+            this.storeVariable(ctx.IDENTIFIER().getText());
+        else
+            this.dereferenceAssign(ctx, var);
+
         return null;
+    }
+
+    private void dereferenceAssign(SolParser.AssignContext ctx, ScopeTree.Variable var)
+    {
+        this.loadReference(var);
+        for (int i = 0; i < ctx.DREF().size(); i++)
+            this.instructions.add(new Instruction(Instruction.Code.DREF));
+        this.instructions.add(new Instruction(Instruction.Code.REFSTORE));
     }
 
     public Void visitWhile(SolParser.WhileContext ctx)
@@ -429,7 +473,7 @@ public class solCompiler extends SolBaseVisitor<Void>
             int allocAmount = this.scope.getVariableCount();
             if (ctx.getParent() instanceof SolParser.BlockContext)
                 this.instructions.add(new Instruction(Instruction.Code.POP, allocAmount));
-            if(ctx.getParent() instanceof SolParser.FunctionDeclarationContext parent)
+            if (ctx.getParent() instanceof SolParser.FunctionDeclarationContext parent)
                 allocAmount -= this.functions.get(parent.IDENTIFIER().getText()).getArgTypes().size();
             allocInstruction.backPatch(allocAmount);
         }

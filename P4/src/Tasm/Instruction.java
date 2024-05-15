@@ -53,7 +53,7 @@ public class Instruction
         DPRINT, DUMINUS, DADD, DSUB, DMULT, DDIV, DEQ, DNEQ, DLT, DLEQ, DTOS,
         SPRINT, SADD, SEQ, SNEQ,
         TCONST, FCONST, BPRINT, BEQ, BNEQ, AND, OR, NOT, BTOS,
-        RPRINT, LDREF, LREF,
+        RPRINT, GREF, LREF, DREF, REFSTORE,
         HALT;
 
         public static boolean hasArgument(Code code)

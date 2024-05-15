@@ -5,7 +5,7 @@ import java.util.Objects;
 
 public class Value
 {
-    private static final Class<?>[] SUPPORTED_TYPES = {Integer.class, Double.class, String.class, Boolean.class};
+    private static final Class<?>[] SUPPORTED_TYPES = {Integer.class, Double.class, String.class, Boolean.class, tVm.Address.class};
     private final Object value;
 
     public Value(Object value)
