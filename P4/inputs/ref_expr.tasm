@@ -1,7 +1,7 @@
 				galloc 2
 				iconst 20
 				gstore 1
-				call _l41
+				call _l33
 				halt
 _l5:			lalloc 1
 				lload -2
@@ -9,17 +9,13 @@ _l5:			lalloc 1
 				lstore 2
 				lload -1
 				dref
-				iconst -2
-				lref
-				dref
+				lload -2
 				refstore
 				lload 2
-				iconst -1
-				lref
-				dref
+				lload -1
 				refstore
 				ret 2
-_l21:			lalloc 1
+_l17:			lalloc 1
 				lload -2
 				dref
 				dref
@@ -27,19 +23,15 @@ _l21:			lalloc 1
 				lload -1
 				dref
 				dref
-				iconst -2
-				lref
-				dref
+				lload -2
 				dref
 				refstore
 				lload 2
-				iconst -1
-				lref
-				dref
+				lload -1
 				dref
 				refstore
 				ret 2
-_l41:			lalloc 4
+_l33:			lalloc 4
 				iconst 1
 				lstore 2
 				iconst 10
@@ -106,7 +98,7 @@ _l41:			lalloc 4
 				gload 0
 				iconst 5
 				lref
-				call _l21
+				call _l17
 				sconst "x: "
 				lload 2
 				itos

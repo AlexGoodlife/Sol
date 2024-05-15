@@ -30,9 +30,9 @@ begin
     print #global_double_ptr;
     print ##global_double_ptr;
 
-   print "global: " + global + " x: " + x;
-   swap(&global, x_ptr);
-   print "global: " + global + " x: " + x;
+    print "global: " + global + " x: " + x;
+    swap(&global, x_ptr);
+    print "global: " + global + " x: " + x;
 
     print "x: " + x + " y: " + y;
     double_swap(global_double_ptr, &y_ptr);

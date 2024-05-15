@@ -329,26 +329,26 @@ public class solCompiler extends SolBaseVisitor<Void>
     public Void visitAssign(SolParser.AssignContext ctx)
     {
         this.visit(ctx.expr());
-        ScopeTree.Variable var = this.scope.getVariable(ctx.IDENTIFIER().getText());
+        Type variableType = this.annotatedTypes.get(ctx);
         Type exprType = this.annotatedTypes.get(ctx.expr());
-        boolean isVariableDouble = var.scopedType().type() == Double.class;
+        boolean isVariableDouble = variableType.type() == Double.class;
         boolean isExprInteger = exprType.type() == Integer.class;
-        boolean isNotRef = !var.scopedType().isRef() || !exprType.isRef();
+        boolean isNotRef = !variableType.isRef() || !exprType.isRef();
         if (isVariableDouble && isExprInteger && isNotRef)
             this.instructions.add(new Instruction(Instruction.Code.ITOD));
 
         if (ctx.DREF().isEmpty())
             this.storeVariable(ctx.IDENTIFIER().getText());
         else
-            this.dereferenceAssign(ctx, var);
+            this.dereferenceAssign(ctx);
 
         return null;
     }
 
-    private void dereferenceAssign(SolParser.AssignContext ctx, ScopeTree.Variable var)
+    private void dereferenceAssign(SolParser.AssignContext ctx)
     {
-        this.loadReference(var);
-        for (int i = 0; i < ctx.DREF().size(); i++)
+        this.loadVariable(ctx.IDENTIFIER().getText());
+        for (int i = 0; i < ctx.DREF().size() - 1; i++)
             this.instructions.add(new Instruction(Instruction.Code.DREF));
         this.instructions.add(new Instruction(Instruction.Code.REFSTORE));
     }
