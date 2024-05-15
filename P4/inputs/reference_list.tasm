@@ -1,0 +1,17 @@
+				galloc 1
+				call _l3
+				halt
+_l3:			lalloc 5
+				iconst 0
+				lstore 2
+				iconst 2
+				lstore 3
+				iconst 3
+				lref
+				lstore 4
+				iconst 2
+				lref
+				lstore 5
+				gload 5
+				lstore 6
+				ret 0

@@ -8,7 +8,17 @@ import java.util.List;
 
 public class ScopeTree implements Tree
 {
-    public record Variable(Type scopedType, int index, boolean global){}
+    public record Variable(Type scopedType, int index, boolean global, Variable next){
+        public int refCount(){
+            int result = 0;
+            Variable head = this.next;
+            while(head != null){
+                head = head.next;
+                result++;
+            }
+            return result;
+        }
+    }
     private final HashMap<String, Variable> variables;
     private ScopeTree parent;
     private final List<ScopeTree> children;
@@ -70,7 +80,13 @@ public class ScopeTree implements Tree
     public void putVariable(String identifier, Type type)
     {
         boolean isRoot = this.parent == null;
-        this.variables.put(identifier, new Variable(type, (this.variableIndex++ + this.offset), isRoot));
+        this.variables.put(identifier, new Variable(type, (this.variableIndex++ + this.offset), isRoot,null));
+    }
+
+    public void putVariable(String identifier, Type type, Variable ref)
+    {
+        boolean isRoot = this.parent == null;
+        this.variables.put(identifier, new Variable(type, (this.variableIndex++ + this.offset), isRoot,ref));
     }
 
     public boolean containsVariableLocal(String identifier)

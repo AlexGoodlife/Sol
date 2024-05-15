@@ -12,6 +12,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Stack;
 
+
 /* Why use a visitor? Because we want to know if we need to insert conversion instructions prior to visiting any upcoming nodes in an expression.
 * With a listener this would be much harder to do in a clean manner,
 * as we would need to check the type of the parent node and its other child nodes in the child node for type conversion instructions */
@@ -268,8 +269,32 @@ public class solCompiler extends SolBaseVisitor<Void>
         return null;
     }
 
-    //TODO A MINHA MAE
+    @Override
+    public Void visitReference(SolParser.ReferenceContext ctx){
+        ScopeTree.Variable var = this.scope.getVariable(ctx.IDENTIFIER().getText());
+        this.instructions.add(new Instruction(Instruction.Code.ICONST, var.index()));
+        if(!var.global()){
+            this.instructions.add(new Instruction(Instruction.Code.LREF));
+        }
+        return null;
+    }
 
+    @Override
+    public Void visitDereference(SolParser.DereferenceContext ctx){
+        ScopeTree.Variable var = this.scope.getVariable(ctx.IDENTIFIER().getText());
+        // This variable HAS a referenced for sure
+        // TODO Its too late I cant figure this shit out but we got the variables I forget how we load them exactly
+        if(!var.next().global()){
+            this.instructions.add(new Instruction(Instruction.Code.GLOAD, var.index()));
+        }
+        else{
+            this.instructions.add(new Instruction(Instruction.Code.LLOAD, var.index()));
+            this.instructions.add(new Instruction(Instruction.Code.LDREF));
+        }
+        return null;
+    }
+
+    //TODO Change declaration assign, print and function declaration to support references
     public Void visitDeclarationAssign(SolParser.DeclarationAssignContext ctx)
     {
         if (ctx.expr() != null)

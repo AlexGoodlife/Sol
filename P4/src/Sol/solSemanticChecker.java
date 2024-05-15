@@ -126,13 +126,24 @@ public class solSemanticChecker extends SolBaseListener
         ScopeTree.Variable var = this.scope.getVariable(variableName);
         if (this.checkIdentifierError(ctx, variableName, var))
             return;
+        // A more thorough, running through the linked list kinda check
+        ScopeTree.Variable head = var;
+        int idx = ctx.DREF().size();
+        while(head != null && idx > 0){
+            head = head.next();
+            idx--;
+        }
+        if(head == null) // We reached the end of the linked list and dereferenced too much
+        {
+            this.reporter.reportError(ctx, DEREFERENCE_NON_POINTER_ERROR_MESSAGE);
+            return;
+        }
         if (ctx.DREF().size() > var.scopedType().refDepth())
         {
             this.reporter.reportError(ctx, DEREFERENCE_NON_POINTER_ERROR_MESSAGE);
             return;
         }
-
-        this.annotatedTypes.put(ctx, new Type(var.scopedType().type(), var.scopedType().refDepth() - 1));
+        this.annotatedTypes.put(ctx, new Type(var.scopedType().type(), var.scopedType().refDepth() - ctx.DREF().size()));
     }
 
     @Override
@@ -371,6 +382,11 @@ public class solSemanticChecker extends SolBaseListener
             Type exprType = this.annotatedTypes.get(ctx.expr());
             if (exprType != null && !compatibleTypes(variableType, exprType))
                 this.reporter.reportError(ctx, TYPE_MISMATCH_ERROR_MESSAGE);
+            if(ctx.expr() instanceof SolParser.ReferenceContext referenceContext){ // Build linked list
+                ScopeTree.Variable referenced = this.scope.getVariable(referenceContext.IDENTIFIER().getText());
+                this.scope.putVariable(variableName, variableType, referenced);
+                return;
+            }
         }
         this.scope.putVariable(variableName, variableType);
     }
