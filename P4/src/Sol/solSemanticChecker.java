@@ -66,25 +66,25 @@ public class solSemanticChecker extends SolBaseListener
     @Override
     public void exitInt(SolParser.IntContext ctx)
     {
-        this.annotatedTypes.put(ctx, new Type(Integer.class, 0));
+        this.annotatedTypes.put(ctx, new Type(Integer.class, 0,0));
     }
 
     @Override
     public void exitDouble(SolParser.DoubleContext ctx)
     {
-        this.annotatedTypes.put(ctx, new Type(Double.class, 0));
+        this.annotatedTypes.put(ctx, new Type(Double.class, 0,0));
     }
 
     @Override
     public void exitString(SolParser.StringContext ctx)
     {
-        this.annotatedTypes.put(ctx, new Type(String.class, 0));
+        this.annotatedTypes.put(ctx, new Type(String.class, 0,0));
     }
 
     @Override
     public void exitBoolean(SolParser.BooleanContext ctx)
     {
-        this.annotatedTypes.put(ctx, new Type(Boolean.class, 0));
+        this.annotatedTypes.put(ctx, new Type(Boolean.class, 0,0));
     }
 
     @Override
@@ -116,7 +116,7 @@ public class solSemanticChecker extends SolBaseListener
         ScopeTree.Variable var = this.scope.getVariable(variableName);
         if (this.checkIdentifierError(ctx, variableName, var))
             return;
-        this.annotatedTypes.put(ctx, new Type(var.scopedType().type(), var.scopedType().refDepth() + 1));
+        this.annotatedTypes.put(ctx, new Type(var.scopedType().type(), var.scopedType().refDepth() + 1,var.scopedType().arrayDim()));
     }
 
     @Override
@@ -132,7 +132,7 @@ public class solSemanticChecker extends SolBaseListener
             return;
         }
 
-        this.annotatedTypes.put(ctx, new Type(var.scopedType().type(), var.scopedType().refDepth() - ctx.DREF().size()));
+        this.annotatedTypes.put(ctx, new Type(var.scopedType().type(), var.scopedType().refDepth() - ctx.DREF().size(),var.scopedType().arrayDim()));
     }
 
     @Override
@@ -159,7 +159,7 @@ public class solSemanticChecker extends SolBaseListener
         boolean isLeftBoolean = leftType.type() == Boolean.class;
         boolean isRightBoolean = rightType.type() == Boolean.class;
         if (isLeftBoolean && isRightBoolean)
-            this.annotatedTypes.put(ctx, new Type(Boolean.class, 0));
+            this.annotatedTypes.put(ctx, new Type(Boolean.class, 0,0));
         else
             this.reporter.reportError(ctx, TYPE_MISMATCH_ERROR_MESSAGE);
     }
@@ -184,7 +184,7 @@ public class solSemanticChecker extends SolBaseListener
         boolean isRightNumber = rightType.type() == Integer.class || rightType.type() == Double.class;
         boolean notRef = !leftType.isRef() && !rightType.isRef();
         if (leftType.equals(rightType) || (isLeftNumber && isRightNumber && notRef))
-            this.annotatedTypes.put(ctx, new Type(Boolean.class, 0));
+            this.annotatedTypes.put(ctx, new Type(Boolean.class, 0,0));
         else
             this.reporter.reportError(ctx, TYPE_MISMATCH_ERROR_MESSAGE);
     }
@@ -202,7 +202,7 @@ public class solSemanticChecker extends SolBaseListener
         boolean isLeftNumber = leftType.type() == Integer.class || leftType.type() == Double.class;
         boolean isRightNumber = rightType.type() == Integer.class || rightType.type() == Double.class;
         if (isLeftNumber && isRightNumber)
-            this.annotatedTypes.put(ctx, new Type(Boolean.class, 0));
+            this.annotatedTypes.put(ctx, new Type(Boolean.class, 0,0));
         else
             this.reporter.reportError(ctx, TYPE_MISMATCH_ERROR_MESSAGE);
     }
@@ -242,11 +242,11 @@ public class solSemanticChecker extends SolBaseListener
         boolean isLeftDouble = leftType == Double.class;
         boolean isRightDouble = rightType == Double.class;
         if (isLeftString || isRightString)
-            this.annotatedTypes.put(ctx, new Type(String.class, 0));
+            this.annotatedTypes.put(ctx, new Type(String.class, 0,0));
         else if (isLeftDouble || isRightDouble)
-            this.annotatedTypes.put(ctx, new Type(Double.class, 0));
+            this.annotatedTypes.put(ctx, new Type(Double.class, 0,0));
         else
-            this.annotatedTypes.put(ctx, new Type(Integer.class, 0));
+            this.annotatedTypes.put(ctx, new Type(Integer.class, 0,0));
     }
 
     private void exitArithmetic(SolParser.ExprContext ctx, SolParser.ExprContext left, SolParser.ExprContext right)
@@ -271,9 +271,9 @@ public class solSemanticChecker extends SolBaseListener
         boolean isLeftDouble = leftType == Double.class;
         boolean isRightDouble = rightType == Double.class;
         if (isLeftDouble || isRightDouble)
-            this.annotatedTypes.put(ctx, new Type(Double.class, 0));
+            this.annotatedTypes.put(ctx, new Type(Double.class, 0,0));
         else
-            this.annotatedTypes.put(ctx, new Type(Integer.class, 0));
+            this.annotatedTypes.put(ctx, new Type(Integer.class, 0,0));
     }
 
     @Override
@@ -297,7 +297,7 @@ public class solSemanticChecker extends SolBaseListener
         boolean isLeftInteger = leftType.type() == Integer.class;
         boolean isRightInteger = rightType.type() == Integer.class;
         if (isLeftInteger && isRightInteger)
-            this.annotatedTypes.put(ctx, new Type(Integer.class, 0));
+            this.annotatedTypes.put(ctx, new Type(Integer.class, 0,0));
         else
             this.reporter.reportError(ctx, TYPE_MISMATCH_ERROR_MESSAGE);
     }
@@ -349,7 +349,7 @@ public class solSemanticChecker extends SolBaseListener
     @Override
     public void enterDeclaration(SolParser.DeclarationContext ctx)
     {
-        this.annotatedTypes.put(ctx, Type.typeOf(ctx.type.getText(), ctx.REF().size()));
+        this.annotatedTypes.put(ctx, Type.typeOf(ctx.type.getText(), ctx.REF().size(),ctx.LSBRACKET().size()));
     }
 
     @Override
@@ -369,6 +369,9 @@ public class solSemanticChecker extends SolBaseListener
             Type exprType = this.annotatedTypes.get(ctx.expr());
             if (exprType != null && !compatibleTypes(variableType, exprType))
                 this.reporter.reportError(ctx, TYPE_MISMATCH_ERROR_MESSAGE);
+        }
+        if(ctx.staticArray() != null){
+            // Check if dimensions are correct
         }
         this.scope.putVariable(variableName, variableType);
     }
@@ -408,7 +411,7 @@ public class solSemanticChecker extends SolBaseListener
         Type variableType = this.getAssignVariableType(ctx, variableName);
         if (variableType == null)
             return;
-        Type exprType = this.annotatedTypes.get(ctx.expr());
+        Type exprType = this.annotatedTypes.get(ctx.expr(ctx.expr().size()-1));
         if (exprType == null)
             return;
 
@@ -426,8 +429,13 @@ public class solSemanticChecker extends SolBaseListener
             this.reporter.reportError(ctx, DEREFERENCE_NON_POINTER_ERROR_MESSAGE);
             return null;
         }
-
-        return ctx.DREF().isEmpty() ? variableType : new Type(variableType.type(), variableType.refDepth() - ctx.DREF().size());
+        int arrayAccessSize = ctx.LSBRACKET().size();
+        int arrayDimension = variableType.arrayDim() - arrayAccessSize;
+        if(arrayDimension < 0){
+            this.reporter.reportError(ctx, DEREFERENCE_NON_POINTER_ERROR_MESSAGE);
+            return null;
+        }
+        return  new Type(variableType.type(), variableType.refDepth() - ctx.DREF().size(),arrayDimension);
     }
 
     private boolean checkVariableAssignmentErrors(SolParser.AssignContext ctx, String variableName)
@@ -512,7 +520,7 @@ public class solSemanticChecker extends SolBaseListener
     public void exitReturn(SolParser.ReturnContext ctx)
     {
         Type cachedType = this.annotatedTypes.get(ctx.expr());
-        Type returnType = cachedType != null ? cachedType : new Type(Void.class, 0);
+        Type returnType = cachedType != null ? cachedType : new Type(Void.class, 0,0);
         if (!compatibleTypes(this.currentFunction.getReturnType(), returnType))
             this.reporter.reportError(ctx, INVALID_RETURN_TYPE_MESSAGE);
     }
@@ -584,7 +592,7 @@ public class solSemanticChecker extends SolBaseListener
         {
            List<SolParser.ArgumentContext> args = ((SolParser.FunctionDeclarationContext) parent).argument();
            this.scope.offset(-args.size());
-           args.forEach((arg) -> this.scope.putVariable(arg.IDENTIFIER().getText(), Type.typeOf(arg.type.getText(), arg.REF().size())));
+           args.forEach((arg) -> this.scope.putVariable(arg.IDENTIFIER().getText(), Type.typeOf(arg.type.getText(), arg.REF().size(),arg.LSBRACKET().size())));
            this.scope.offset(2); // Offset to compensate for frame pointer and return address on execution stack
         }
     }
@@ -593,6 +601,31 @@ public class solSemanticChecker extends SolBaseListener
     public void exitScope(SolParser.ScopeContext ctx)
     {
         this.scope = (ScopeTree) this.scope.getParent(); // Back track on our scopes when moving because global scope is not classified as such we never go beyond root
+    }
+
+    @Override
+    public void exitStaticArray(SolParser.StaticArrayContext ctx){
+        if(ctx.expr() != null) return;
+
+        Type arrayType = this.annotatedTypes.get(ctx.staticArray(0));
+        for(SolParser.StaticArrayContext arr : ctx.staticArray()){
+           if(!this.annotatedTypes.get(arr).equals(arrayType)){
+               this.reporter.reportError(arr, TYPE_MISMATCH_ERROR_MESSAGE);
+               return;
+           }
+        }
+        this.annotatedTypes.put(ctx, this.annotatedTypes.get(ctx.getParent().getParent()));
+    }
+
+    @Override
+    public void exitArrayAccess(SolParser.ArrayAccessContext ctx){
+        ScopeTree.Variable var = this.scope.getVariable(ctx.IDENTIFIER().getText());
+        int accessAmount = ctx.LSBRACKET().size();
+        if( var.scopedType().arrayDim() - accessAmount< 0 ){
+            this.reporter.reportError(ctx, DEREFERENCE_NON_POINTER_ERROR_MESSAGE);
+            return;
+        }
+        this.annotatedTypes.put(ctx, new Type(var.scopedType().type(), var.scopedType().refDepth(), var.scopedType().arrayDim() - accessAmount));
     }
 
     public void semanticCheck(ParseTree tree)

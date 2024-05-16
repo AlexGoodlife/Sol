@@ -332,9 +332,9 @@ public class solCompiler extends SolBaseVisitor<Void>
 
     public Void visitAssign(SolParser.AssignContext ctx)
     {
-        this.visit(ctx.expr());
+        ctx.expr().forEach(this::visit);
         Type variableType = this.annotatedTypes.get(ctx);
-        Type exprType = this.annotatedTypes.get(ctx.expr());
+        Type exprType = this.annotatedTypes.get(ctx.expr(ctx.expr().size()-1));
         boolean isVariableDouble = variableType.type() == Double.class;
         boolean isExprInteger = exprType.type() == Integer.class;
         boolean isNotRef = !variableType.isRef() || !exprType.isRef();
