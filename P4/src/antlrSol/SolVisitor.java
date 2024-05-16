@@ -29,6 +29,12 @@ public interface SolVisitor<T> extends ParseTreeVisitor<T> {
 	 */
 	T visitDeclarationAssign(SolParser.DeclarationAssignContext ctx);
 	/**
+	 * Visit a parse tree produced by {@link SolParser#staticArray}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitStaticArray(SolParser.StaticArrayContext ctx);
+	/**
 	 * Visit a parse tree produced by {@link SolParser#functionDeclaration}.
 	 * @param ctx the parse tree
 	 * @return the visitor result
@@ -185,6 +191,13 @@ public interface SolVisitor<T> extends ParseTreeVisitor<T> {
 	 * @return the visitor result
 	 */
 	T visitInt(SolParser.IntContext ctx);
+	/**
+	 * Visit a parse tree produced by the {@code ArrayAccess}
+	 * labeled alternative in {@link SolParser#expr}.
+	 * @param ctx the parse tree
+	 * @return the visitor result
+	 */
+	T visitArrayAccess(SolParser.ArrayAccessContext ctx);
 	/**
 	 * Visit a parse tree produced by the {@code Identifier}
 	 * labeled alternative in {@link SolParser#expr}.

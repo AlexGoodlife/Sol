@@ -53,6 +53,18 @@ public class SolBaseListener implements SolListener {
 	 *
 	 * <p>The default implementation does nothing.</p>
 	 */
+	@Override public void enterStaticArray(SolParser.StaticArrayContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitStaticArray(SolParser.StaticArrayContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
 	@Override public void enterFunctionDeclaration(SolParser.FunctionDeclarationContext ctx) { }
 	/**
 	 * {@inheritDoc}
@@ -324,6 +336,18 @@ public class SolBaseListener implements SolListener {
 	 * <p>The default implementation does nothing.</p>
 	 */
 	@Override public void exitInt(SolParser.IntContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void enterArrayAccess(SolParser.ArrayAccessContext ctx) { }
+	/**
+	 * {@inheritDoc}
+	 *
+	 * <p>The default implementation does nothing.</p>
+	 */
+	@Override public void exitArrayAccess(SolParser.ArrayAccessContext ctx) { }
 	/**
 	 * {@inheritDoc}
 	 *

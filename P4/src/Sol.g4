@@ -3,16 +3,20 @@ grammar Sol;
 program:    declaration* functionDeclaration+ EOF
             ;
 
-declaration:    type=(INT_T|DOUBLE_T|STRING_T|BOOLEAN_T) REF* declarationAssign (',' declarationAssign)* EOL
+declaration:    type=(INT_T|DOUBLE_T|STRING_T|BOOLEAN_T) REF* (LSBRACKET INT RSBRACKET)*  declarationAssign (',' declarationAssign)* EOL
                 ;
 
-declarationAssign:  IDENTIFIER ('=' expr)?
+declarationAssign:  IDENTIFIER ('=' (expr|staticArray))?
                     ;
+
+staticArray:    LSBRACKET (staticArray (',' staticArray)*)? RSBRACKET
+                | expr //This won't cause conflicts with the expression rule as it has a lower priority
+                ;
 
 functionDeclaration:    type=(INT_T|DOUBLE_T|STRING_T|BOOLEAN_T|VOID) IDENTIFIER LPAREN (argument (',' argument)*)? RPAREN scope
                         ;
 
-argument:   type=(INT_T|DOUBLE_T|STRING_T|BOOLEAN_T) REF* IDENTIFIER
+argument:   type=(INT_T|DOUBLE_T|STRING_T|BOOLEAN_T) REF* (LSBRACKET RSBRACKET)* IDENTIFIER
             ;
 
 scope:  BEGIN declaration* instruction* END
@@ -30,7 +34,7 @@ instruction:    PRINT expr EOL                                          #Print
                 | RETURN expr? EOL                                      #Return
                 ;
 
-assign: DREF* IDENTIFIER '=' expr
+assign: DREF* IDENTIFIER (LSBRACKET expr RSBRACKET)* '=' expr
         ;
 
 expr:   LPAREN expr RPAREN                                      #Parentheses
@@ -49,6 +53,7 @@ expr:   LPAREN expr RPAREN                                      #Parentheses
         | IDENTIFIER LPAREN (expr (',' expr)*)? RPAREN          #NonVoidFunctionCall
         | REF IDENTIFIER                                        #Reference
         | DREF* IDENTIFIER                                      #Dereference
+        | IDENTIFIER (LSBRACKET expr RSBRACKET)+                #ArrayAccess
         ;
 
 //Language types
@@ -56,6 +61,8 @@ INT: DIGIT+;
 DOUBLE: DIGIT+'.'DIGIT+;
 STRING: '"' ('\\"'|.)*? '"';
 BOOLEAN: TRUE | FALSE;
+LSBRACKET: '[';
+RSBRACKET: ']';
 
 //Reserved keywords
 PRINT: 'print';

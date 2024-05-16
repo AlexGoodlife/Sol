@@ -38,6 +38,16 @@ public interface SolListener extends ParseTreeListener {
 	 */
 	void exitDeclarationAssign(SolParser.DeclarationAssignContext ctx);
 	/**
+	 * Enter a parse tree produced by {@link SolParser#staticArray}.
+	 * @param ctx the parse tree
+	 */
+	void enterStaticArray(SolParser.StaticArrayContext ctx);
+	/**
+	 * Exit a parse tree produced by {@link SolParser#staticArray}.
+	 * @param ctx the parse tree
+	 */
+	void exitStaticArray(SolParser.StaticArrayContext ctx);
+	/**
 	 * Enter a parse tree produced by {@link SolParser#functionDeclaration}.
 	 * @param ctx the parse tree
 	 */
@@ -305,6 +315,18 @@ public interface SolListener extends ParseTreeListener {
 	 * @param ctx the parse tree
 	 */
 	void exitInt(SolParser.IntContext ctx);
+	/**
+	 * Enter a parse tree produced by the {@code ArrayAccess}
+	 * labeled alternative in {@link SolParser#expr}.
+	 * @param ctx the parse tree
+	 */
+	void enterArrayAccess(SolParser.ArrayAccessContext ctx);
+	/**
+	 * Exit a parse tree produced by the {@code ArrayAccess}
+	 * labeled alternative in {@link SolParser#expr}.
+	 * @param ctx the parse tree
+	 */
+	void exitArrayAccess(SolParser.ArrayAccessContext ctx);
 	/**
 	 * Enter a parse tree produced by the {@code Identifier}
 	 * labeled alternative in {@link SolParser#expr}.
