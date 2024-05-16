@@ -14,4 +14,5 @@ begin
     print &x + &y; //Safely assuming that it works for all operations
     print &x == &y;
     print ##af;
+    ##af = 3.14;
 end

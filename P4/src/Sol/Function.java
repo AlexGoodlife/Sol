@@ -30,7 +30,7 @@ public class Function
 
     public boolean hasGuaranteedReturn()
     {
-        return  this.hasGuaranteedReturn;
+        return this.hasGuaranteedReturn;
     }
 
     public void setHasGuaranteedReturn(boolean hasGuaranteedReturn)

@@ -357,11 +357,9 @@ public class solSemanticChecker extends SolBaseListener
     {
         if (ctx.IDENTIFIER() == null)
             return;
-
         String variableName = ctx.IDENTIFIER().getText();
         if (this.checkVariableDeclarationsErrors(ctx, variableName))
             return;
-
         Type variableType = this.annotatedTypes.get(ctx.getParent());
         if (variableType == null)
             throw new InternalError("Variable has no type after declaration? Shouldn't happen");
@@ -407,14 +405,9 @@ public class solSemanticChecker extends SolBaseListener
         String variableName = ctx.IDENTIFIER().getText();
         if (this.checkVariableAssignmentErrors(ctx, variableName))
             return;
-        Type variableType = this.scope.getVariable(variableName).scopedType();
-        if (ctx.DREF().size() > variableType.refDepth())
-        {
-            this.reporter.reportError(ctx, DEREFERENCE_NON_POINTER_ERROR_MESSAGE);
+        Type variableType = this.getAssignVariableType(ctx, variableName);
+        if (variableType == null)
             return;
-        }
-
-        variableType = ctx.DREF().isEmpty() ? variableType : new Type(variableType.type(), variableType.refDepth() - ctx.DREF().size());
         Type exprType = this.annotatedTypes.get(ctx.expr());
         if (exprType == null)
             return;
@@ -423,6 +416,18 @@ public class solSemanticChecker extends SolBaseListener
             this.annotatedTypes.put(ctx, variableType);
         else
             this.reporter.reportError(ctx, TYPE_MISMATCH_ERROR_MESSAGE);
+    }
+
+    private Type getAssignVariableType(SolParser.AssignContext ctx, String variableName)
+    {
+        Type variableType = this.scope.getVariable(variableName).scopedType();
+        if (ctx.DREF().size() > variableType.refDepth())
+        {
+            this.reporter.reportError(ctx, DEREFERENCE_NON_POINTER_ERROR_MESSAGE);
+            return null;
+        }
+
+        return ctx.DREF().isEmpty() ? variableType : new Type(variableType.type(), variableType.refDepth() - ctx.DREF().size());
     }
 
     private boolean checkVariableAssignmentErrors(SolParser.AssignContext ctx, String variableName)

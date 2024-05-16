@@ -42,6 +42,9 @@ _l33:			lalloc 4
 				iconst 3
 				lref
 				lstore 5
+				iconst 1
+				gref
+				rprint
 				lload 2
 				iprint
 				iconst 2
@@ -109,4 +112,24 @@ _l33:			lalloc 4
 				itos
 				sadd
 				sprint
+				iconst 2
+				lref
+				lload 4
+				req
+				bprint
+				iconst 2
+				lref
+				lload 4
+				rneq
+				bprint
+				iconst 3
+				lref
+				lload 4
+				req
+				bprint
+				iconst 3
+				lref
+				lload 4
+				rneq
+				bprint
 				ret 0

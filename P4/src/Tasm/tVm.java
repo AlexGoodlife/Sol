@@ -18,7 +18,7 @@ public class tVm
     private static final String DEFAULT_BYTECODES_FILE_NAME = null;
     private static final boolean DEFAULT_SHOW_TRACE = false;
 
-    private static final int MAX_STACK_SIZE = 1048576; //1MB in bytes
+    private static final int MAX_MEMORY_UNITS_SIZE = 1048576; //1MB in bytes
 
     private String byteCodesFileName;
     private boolean showTrace;
@@ -147,8 +147,8 @@ public class tVm
                 this.printTrace(currentInstruction);
             this.executeInstruction(currentInstruction);
 
-            if (this.executionStack.size() > MAX_STACK_SIZE)
-                this.genericError(currentInstruction, "Execution stack ran out of memory");
+            if (this.executionStack.size() + this.globalMemory.size() > MAX_MEMORY_UNITS_SIZE)
+                this.genericError(currentInstruction, "VM ran out of memory");
         }
 
         //If it reaches the end without halting it means no halt was encountered, throw error
@@ -363,14 +363,34 @@ public class tVm
             this.typeError(instruction, Boolean.class);
     }
 
-    public record Address(int address, boolean isGlobal){}
+    public record Address(int address, boolean isGlobal)
+    {
+        @Override
+        public String toString()
+        {
+            String s = String.format("0x%08X", this.address);
+            s = this.isGlobal ? "g" + s : "l" + s;
+            return s;
+        }
+
+        @Override
+        public boolean equals(Object that)
+        {
+            if (this == that)
+                return true;
+            if (!(that instanceof Address thatAddress))
+                return false;
+
+            return this.address == thatAddress.address && this.isGlobal == thatAddress.isGlobal;
+        }
+    }
 
     private void executeAddressStackInstruction(Value popped, Instruction instruction)
     {
         if (popped.getValue() instanceof Address poppedAddress)
             switch (instruction.getInstruction())
             {
-                case RPRINT -> System.out.printf("0x%08X%n", poppedAddress.address);
+                case RPRINT -> System.out.println(poppedAddress);
                 case DREF -> {
                     List<Value> selectedMemoryChunk = poppedAddress.isGlobal ? this.globalMemory : this.executionStack;
                     if (poppedAddress.address < 0 || poppedAddress.address >= selectedMemoryChunk.size())
@@ -406,6 +426,7 @@ public class tVm
 
                 selectedMemoryChunk.set(poppedAddress.address, second);
             }
+            case REQ, RNEQ -> this.executeAddressStackInstruction(second, first, instruction);
         }
     }
 
@@ -469,13 +490,25 @@ public class tVm
 
     private void executeBooleanStackInstruction(Value left, Value right, Instruction instruction)
     {
-        if (right.getValue() instanceof Boolean rightBoolean && left.getValue()  instanceof Boolean leftBoolean)
+        if (right.getValue() instanceof Boolean rightBoolean && left.getValue() instanceof Boolean leftBoolean)
             switch (instruction.getInstruction())
             {
                 case BEQ -> this.executionStack.push(new Value(leftBoolean == rightBoolean));
                 case BNEQ -> this.executionStack.push(new Value(leftBoolean != rightBoolean));
                 case AND -> this.executionStack.push(new Value(leftBoolean && rightBoolean));
                 case OR -> this.executionStack.push(new Value(leftBoolean || rightBoolean));
+            }
+        else
+            this.typeError(instruction, Boolean.class);
+    }
+
+    private void executeAddressStackInstruction(Value left, Value right, Instruction instruction)
+    {
+        if (right.getValue() instanceof Address rightAddress && left.getValue() instanceof Address leftAddress)
+            switch (instruction.getInstruction())
+            {
+                case REQ -> this.executionStack.push(new Value(leftAddress.equals(rightAddress)));
+                case RNEQ -> this.executionStack.push(new Value(!leftAddress.equals(rightAddress)));
             }
         else
             this.typeError(instruction, Boolean.class);

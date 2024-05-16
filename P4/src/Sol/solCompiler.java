@@ -139,11 +139,11 @@ public class solCompiler extends SolBaseVisitor<Void>
 
     /* A return value of null in this function signifies something is very wrong with the implementation.
     * As such we throw an InternalError if such ever occurs */
-    private Class<?> visitNodesWithTypeConversionChecking(SolParser.ExprContext firstToVisit, SolParser.ExprContext secondToVisit)
+    private Type visitNodesWithTypeConversionChecking(SolParser.ExprContext firstToVisit, SolParser.ExprContext secondToVisit)
     {
-        Class<?> firstType = this.annotatedTypes.get(firstToVisit).type();
-        Class<?> secondType = this.annotatedTypes.get(secondToVisit).type();
-        Class<?> type = firstType == secondType ? firstType : null;
+        Type firstType = this.annotatedTypes.get(firstToVisit);
+        Type secondType = this.annotatedTypes.get(secondToVisit);
+        Type type = firstType.equals(secondType) ? firstType : null;
 
         this.visit(firstToVisit);
         type = this.addConversionIfPossible(firstType, secondType) ? secondType : type;
@@ -155,20 +155,22 @@ public class solCompiler extends SolBaseVisitor<Void>
         return type;
     }
 
-    private boolean addConversionIfPossible(Class<?> from, Class<?> to)
+    private boolean addConversionIfPossible(Type from, Type to)
     {
         if (from == to)
+            return false;
+        if (from.isRef() || to.isRef())
             return false;
 
         int initialSize = this.instructions.size();
 
-        if (from == Integer.class && to == String.class)
+        if (from.type() == Integer.class && to.type() == String.class)
             this.instructions.add(new Instruction(Instruction.Code.ITOS));
-        else if (from == Integer.class && to == Double.class)
+        else if (from.type() == Integer.class && to.type() == Double.class)
             this.instructions.add(new Instruction(Instruction.Code.ITOD));
-        else if (from == Double.class && to == String.class)
+        else if (from.type() == Double.class && to.type() == String.class)
             this.instructions.add(new Instruction(Instruction.Code.DTOS));
-        else if (from == Boolean.class && to == String.class)
+        else if (from.type() == Boolean.class && to.type() == String.class)
             this.instructions.add(new Instruction(Instruction.Code.BTOS));
 
         return this.instructions.size() > initialSize;
@@ -177,16 +179,18 @@ public class solCompiler extends SolBaseVisitor<Void>
     @Override
     public Void visitEquality(SolParser.EqualityContext ctx)
     {
-        Class<?> type = this.visitNodesWithTypeConversionChecking(ctx.expr(0), ctx.expr(1));
+        Type type = this.visitNodesWithTypeConversionChecking(ctx.expr(0), ctx.expr(1));
 
         Instruction.Code code;
-        if (type == Integer.class)
+        if (type.isRef())
+            code = ctx.op.getText().equals("==") ? Instruction.Code.REQ : Instruction.Code.RNEQ;
+        else if (type.type() == Integer.class)
             code = ctx.op.getText().equals("==") ? Instruction.Code.IEQ : Instruction.Code.INEQ;
-        else if (type == Double.class)
+        else if (type.type() == Double.class)
             code = ctx.op.getText().equals("==") ? Instruction.Code.DEQ : Instruction.Code.DNEQ;
-        else if (type == String.class)
+        else if (type.type() == String.class)
             code = ctx.op.getText().equals("==") ? Instruction.Code.SEQ : Instruction.Code.SNEQ;
-        else if (type == Boolean.class)
+        else if (type.type() == Boolean.class)
             code = ctx.op.getText().equals("==") ? Instruction.Code.BEQ : Instruction.Code.BNEQ;
         else
             throw new InternalError("Invalid type caused instruction code to be null");
@@ -200,12 +204,12 @@ public class solCompiler extends SolBaseVisitor<Void>
     {
         SolParser.ExprContext firstToVisit = ctx.op.getText().matches("<|<=") ? ctx.expr(0) : ctx.expr(1);
         SolParser.ExprContext secondToVisit = firstToVisit.equals(ctx.expr(0)) ? ctx.expr(1) : ctx.expr(0);
-        Class<?> type = this.visitNodesWithTypeConversionChecking(firstToVisit, secondToVisit);
+        Type type = this.visitNodesWithTypeConversionChecking(firstToVisit, secondToVisit);
 
         Instruction.Code code;
-        if (type == Integer.class)
+        if (type.type() == Integer.class)
             code = ctx.op.getText().matches("[<>]") ? Instruction.Code.ILT : Instruction.Code.ILEQ;
-        else if (type == Double.class)
+        else if (type.type() == Double.class)
             code = ctx.op.getText().matches("[<>]") ? Instruction.Code.DLT : Instruction.Code.DLEQ;
         else
             throw new InternalError("Invalid type caused instruction code to be null");
@@ -217,14 +221,14 @@ public class solCompiler extends SolBaseVisitor<Void>
     @Override
     public Void visitAddSub(SolParser.AddSubContext ctx)
     {
-        Class<?> type = this.visitNodesWithTypeConversionChecking(ctx.expr(0), ctx.expr(1));
+        Type type = this.visitNodesWithTypeConversionChecking(ctx.expr(0), ctx.expr(1));
 
         Instruction.Code code;
-        if (type == Integer.class)
+        if (type.type() == Integer.class)
             code = ctx.op.getText().equals("+") ? Instruction.Code.IADD : Instruction.Code.ISUB;
-        else if (type == Double.class)
+        else if (type.type() == Double.class)
             code = ctx.op.getText().equals("+") ? Instruction.Code.DADD : Instruction.Code.DSUB;
-        else if (type == String.class && ctx.op.getText().equals("+"))
+        else if (type.type() == String.class && ctx.op.getText().equals("+"))
             code = Instruction.Code.SADD;
         else
             throw new InternalError("Invalid type caused instruction code to be null");
@@ -236,14 +240,14 @@ public class solCompiler extends SolBaseVisitor<Void>
     @Override
     public Void visitMultDivMod(SolParser.MultDivModContext ctx)
     {
-        Class<?> type = this.visitNodesWithTypeConversionChecking(ctx.expr(0), ctx.expr(1));
+        Type type = this.visitNodesWithTypeConversionChecking(ctx.expr(0), ctx.expr(1));
 
         Instruction.Code code;
-        if (type == Integer.class && ctx.op.getText().equals("%"))
+        if (type.type() == Integer.class && ctx.op.getText().equals("%"))
             code = Instruction.Code.IMOD;
-        else if (type == Integer.class)
+        else if (type.type() == Integer.class)
             code = ctx.op.getText().equals("*") ? Instruction.Code.IMULT : Instruction.Code.IDIV;
-        else if (type == Double.class)
+        else if (type.type() == Double.class)
             code = ctx.op.getText().equals("*") ? Instruction.Code.DMULT : Instruction.Code.DDIV;
         else
             throw new InternalError("Invalid type caused instruction code to be null");

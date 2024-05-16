@@ -1,0 +1,6 @@
+				call _l4
+				halt
+_l2:			call _l2
+				ret 0
+_l4:			call _l2
+				ret 0

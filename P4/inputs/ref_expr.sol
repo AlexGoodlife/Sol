@@ -17,9 +17,12 @@ end
 
 void main()
 begin
+
     int x = 1, y = 10;
     int& x_ptr = &x;
     int& y_ptr = &y;
+
+    print &global;
 
     print x;
     print &x;
@@ -37,4 +40,9 @@ begin
     print "x: " + x + " y: " + y;
     double_swap(global_double_ptr, &y_ptr);
     print "x: " + x + " y: " + y;
+
+    print &x == x_ptr;
+    print &x != x_ptr;
+    print &y == x_ptr;
+    print &y != x_ptr;
 end
