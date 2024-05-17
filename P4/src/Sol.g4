@@ -3,7 +3,7 @@ grammar Sol;
 program:    declaration* functionDeclaration+ EOF
             ;
 
-declaration:    type=(INT_T|DOUBLE_T|STRING_T|BOOLEAN_T) REF* declarationAssign (',' declarationAssign)* EOL
+declaration:    type=(INT_T|DOUBLE_T|STRING_T|BOOLEAN_T) REF* (LSBRACKET INT RSBRACKET)* declarationAssign (',' declarationAssign)* EOL
                 ;
 
 declarationAssign:  IDENTIFIER ('=' expr)?
@@ -12,7 +12,7 @@ declarationAssign:  IDENTIFIER ('=' expr)?
 functionDeclaration:    type=(INT_T|DOUBLE_T|STRING_T|BOOLEAN_T|VOID) IDENTIFIER LPAREN (argument (',' argument)*)? RPAREN scope
                         ;
 
-argument:   type=(INT_T|DOUBLE_T|STRING_T|BOOLEAN_T) REF* IDENTIFIER
+argument:   type=(INT_T|DOUBLE_T|STRING_T|BOOLEAN_T) REF* (E_ARRAY)* IDENTIFIER
             ;
 
 scope:  BEGIN declaration* instruction* END
@@ -49,6 +49,7 @@ expr:   LPAREN expr RPAREN                                      #Parentheses
         | IDENTIFIER LPAREN (expr (',' expr)*)? RPAREN          #NonVoidFunctionCall
         | REF IDENTIFIER                                        #Reference
         | DREF* IDENTIFIER                                      #Dereference
+        | IDENTIFIER (LSBRACKET expr RSBRACKET)+                #ArrayAccess
         ;
 
 //Language types
@@ -97,6 +98,11 @@ AND: 'and';
 OR: 'or';
 REF: '&';
 DREF: '#';
+
+//Arrays
+LSBRACKET: '[';
+RSBRACKET: ']';
+E_ARRAY: LSBRACKET RSBRACKET;
 
 //Identifier
 IDENTIFIER: ('_'|LETTER)('_'|LETTER|DIGIT)*;

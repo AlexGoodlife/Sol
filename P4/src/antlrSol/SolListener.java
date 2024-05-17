@@ -1,4 +1,4 @@
-// Generated from C:/Users/Acer/Desktop/Programations/cop_projeto/P4/src/Sol.g4 by ANTLR 4.13.1
+// Generated from /home/compl3x/Programations/cop_projeto/P4/src/Sol.g4 by ANTLR 4.13.1
 package antlrSol;
 import org.antlr.v4.runtime.tree.ParseTreeListener;
 
@@ -305,6 +305,18 @@ public interface SolListener extends ParseTreeListener {
 	 * @param ctx the parse tree
 	 */
 	void exitInt(SolParser.IntContext ctx);
+	/**
+	 * Enter a parse tree produced by the {@code ArrayAccess}
+	 * labeled alternative in {@link SolParser#expr}.
+	 * @param ctx the parse tree
+	 */
+	void enterArrayAccess(SolParser.ArrayAccessContext ctx);
+	/**
+	 * Exit a parse tree produced by the {@code ArrayAccess}
+	 * labeled alternative in {@link SolParser#expr}.
+	 * @param ctx the parse tree
+	 */
+	void exitArrayAccess(SolParser.ArrayAccessContext ctx);
 	/**
 	 * Enter a parse tree produced by the {@code Identifier}
 	 * labeled alternative in {@link SolParser#expr}.
