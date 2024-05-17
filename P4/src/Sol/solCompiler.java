@@ -712,7 +712,7 @@ public class solCompiler extends SolBaseVisitor<Void>
     {
         System.out.println("ASSEMBLED INSTRUCTIONS:");
         for (int i = 0; i < this.instructions.size(); i++)
-            System.out.println(i + ":\t" + this.instructions.get(i));
+            System.out.println(String.format("%04d", i) + ":\t" + this.instructions.get(i));
 
         System.out.println("\nASSEMBLED CONSTANT POOL:");
         System.out.println(this.constantPool);

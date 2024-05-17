@@ -33,9 +33,9 @@ public class solFunctionChecker extends SolBaseListener
     public void enterFunctionDeclaration(SolParser.FunctionDeclarationContext ctx)
     {
         String id = ctx.IDENTIFIER().getText();
-        Type returnType = Type.typeOf(ctx.type.getText(), 0);
+        Type returnType = Type.getPrimitiveType(ctx.type.getText());
         List<Type> argTypes = new ArrayList<>();
-        ctx.argument().forEach((T) -> argTypes.add(Type.typeOf(T.type.getText(), T.REF().size())));
+        ctx.argument().forEach((T) -> argTypes.add(Type.getReferenceType(T.type.getText(), T.REF().size())));
         if (id.equals("main") && returnType.type() == Void.class && argTypes.isEmpty())
             this.hasMain = true;
         Function function = new Function(returnType, argTypes);

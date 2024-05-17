@@ -10,7 +10,7 @@ public class Function
 
     public Function(Type returnType, List<Type> argTypes)
     {
-        if (returnType.refDepth() != 0)
+        if (returnType.isRef())
             throw new InternalError("Shouldn't happen");
 
         this.returnType = returnType;

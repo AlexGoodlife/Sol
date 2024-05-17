@@ -130,7 +130,7 @@ public class tVm
     {
         System.out.println("DISASSEMBLED INSTRUCTIONS:");
         for (int i = 0; i < this.instructions.size(); i++)
-            System.out.println(i + ":\t" + this.instructions.get(i));
+            System.out.println(String.format("%04d", i) + ":\t" + this.instructions.get(i));
 
         System.out.println("\nDISASSEMBLED CONSTANT POOL:");
         System.out.println(this.constantPool);
@@ -158,9 +158,9 @@ public class tVm
 
     private void printTrace(Instruction currentInstruction)
     {
-        String s = currentInstruction.toString();
-        String opStr = s + " ".repeat(Math.max(0, 20 - s.length()));
-        System.out.println("\n" + (this.instructionPointer - 1) + ":" + "\t" + opStr + "\tStack:\t" + this.executionStack);
+        String line = String.format("%04d", this.instructionPointer - 1);
+        System.out.println("\n" + line + ":" + "\t" + currentInstruction);
+        System.out.println("\t".repeat(7) + "Stack:\t" + this.executionStack);
         System.out.println("\t".repeat(7) + "Frame pointer:\t" + this.framePointer);
         System.out.println("\t".repeat(7) + "Global Memory:\t" + this.globalMemory);
     }
@@ -329,6 +329,28 @@ public class tVm
             this.typeError(instruction, Integer.class);
     }
 
+    public record Address(int address, boolean isGlobal)
+    {
+        @Override
+        public String toString()
+        {
+            String s = String.format("0x%08X", this.address);
+            s = this.isGlobal ? "g" + s : "l" + s;
+            return s;
+        }
+
+        @Override
+        public boolean equals(Object that)
+        {
+            if (this == that)
+                return true;
+            if (!(that instanceof Address thatAddress))
+                return false;
+
+            return this.address == thatAddress.address && this.isGlobal == thatAddress.isGlobal;
+        }
+    }
+
     private void executeDoubleStackInstruction(Value popped, Instruction instruction)
     {
         if (popped.getValue() instanceof Double poppedDouble)
@@ -361,28 +383,6 @@ public class tVm
             }
         else
             this.typeError(instruction, Boolean.class);
-    }
-
-    public record Address(int address, boolean isGlobal)
-    {
-        @Override
-        public String toString()
-        {
-            String s = String.format("0x%08X", this.address);
-            s = this.isGlobal ? "g" + s : "l" + s;
-            return s;
-        }
-
-        @Override
-        public boolean equals(Object that)
-        {
-            if (this == that)
-                return true;
-            if (!(that instanceof Address thatAddress))
-                return false;
-
-            return this.address == thatAddress.address && this.isGlobal == thatAddress.isGlobal;
-        }
     }
 
     private void executeAddressStackInstruction(Value popped, Instruction instruction)
