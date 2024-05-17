@@ -8,7 +8,7 @@ import java.util.List;
 
 public class ScopeTree implements Tree
 {
-    public record Variable(Type scopedType, int index, boolean global){}
+    public record Variable(Type scopedType, int index, boolean global, int memSize){}
     private final HashMap<String, Variable> variables;
     private ScopeTree parent;
     private final List<ScopeTree> children;
@@ -29,13 +29,15 @@ public class ScopeTree implements Tree
         Meaning that for any child we need to check if the parent is root, if so, offset from that nodes variables
          */
         this.parent = parent;
-        this.offset = this.parent == null ? 0 : this.parent.offset;
 
         if (this.parent == null)
             return;
 
         if (this.parent.parent != null)
+        {
             this.variableIndex = this.parent.variableIndex;
+            this.offset = this.parent.offset;
+        }
     }
 
     public void offset(int offset)
@@ -70,7 +72,14 @@ public class ScopeTree implements Tree
     public void putVariable(String identifier, Type type)
     {
         boolean isRoot = this.parent == null;
-        this.variables.put(identifier, new Variable(type, (this.variableIndex++ + this.offset), isRoot));
+        this.variables.put(identifier, new Variable(type, (this.variableIndex++ + this.offset), isRoot,1));
+    }
+
+    public void putVariable(String identifier, Type type, int memSize)
+    {
+        boolean isRoot = this.parent == null;
+        this.variables.put(identifier, new Variable(type, (this.variableIndex++ + this.offset), isRoot, memSize));
+        this.offset += memSize - 1;
     }
 
     public boolean containsVariableLocal(String identifier)
@@ -88,9 +97,9 @@ public class ScopeTree implements Tree
         return this.children.get(this.children.size() - 1);
     }
 
-    public int getVariableCount()
+    public int getScopeMemSize()
     {
-        return this.variables.size();
+        return this.variables.values().stream().map(variable -> variable.memSize).reduce(0, Integer::sum);
     }
 
     @Override

@@ -1,0 +1,7 @@
+				galloc 120
+				call _l5
+				halt
+				lalloc 5
+				ret 1
+_l5:			lalloc 727
+				ret 0

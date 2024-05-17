@@ -332,9 +332,9 @@ public class solCompiler extends SolBaseVisitor<Void>
 
     public Void visitAssign(SolParser.AssignContext ctx)
     {
-        this.visit(ctx.expr());
+        this.visit(ctx.expr(ctx.expr().size() - 1));
         Type variableType = this.annotatedTypes.get(ctx);
-        Type exprType = this.annotatedTypes.get(ctx.expr());
+        Type exprType = this.annotatedTypes.get(ctx.expr(ctx.expr().size() - 1));
         boolean isVariableDouble = variableType.type() == Double.class;
         boolean isExprInteger = exprType.type() == Integer.class;
         boolean isNotRef = !variableType.isRef() || !exprType.isRef();
@@ -442,7 +442,7 @@ public class solCompiler extends SolBaseVisitor<Void>
     public Void visitProgram(SolParser.ProgramContext ctx)
     {
         if (!ctx.declaration().isEmpty())
-            this.instructions.add(new Instruction(Instruction.Code.GALLOC, this.scope.getVariableCount()));
+            this.instructions.add(new Instruction(Instruction.Code.GALLOC, this.scope.getScopeMemSize()));
 
         for (SolParser.DeclarationContext declaration : ctx.declaration())
             this.visit(declaration);
@@ -474,7 +474,7 @@ public class solCompiler extends SolBaseVisitor<Void>
         
         if (!ctx.declaration().isEmpty())
         {
-            int allocAmount = this.scope.getVariableCount();
+            int allocAmount = this.scope.getScopeMemSize();
             if (ctx.getParent() instanceof SolParser.BlockContext)
                 this.instructions.add(new Instruction(Instruction.Code.POP, allocAmount));
             if (ctx.getParent() instanceof SolParser.FunctionDeclarationContext parent)

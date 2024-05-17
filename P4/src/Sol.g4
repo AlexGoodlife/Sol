@@ -30,7 +30,7 @@ instruction:    PRINT expr EOL                                          #Print
                 | RETURN expr? EOL                                      #Return
                 ;
 
-assign: DREF* IDENTIFIER '=' expr
+assign: DREF* IDENTIFIER (LSBRACKET expr RSBRACKET)* '=' expr
         ;
 
 expr:   LPAREN expr RPAREN                                      #Parentheses

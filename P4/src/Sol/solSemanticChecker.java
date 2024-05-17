@@ -22,6 +22,7 @@ public class solSemanticChecker extends SolBaseListener
     private static final String FUNCTION_ID_ERROR_MESSAGE = "Identifier is not a variable";
     private static final String POINTER_OPERATION_ERROR_MESSAGE = "Pointer operation is not allowed";
     private static final String DEREFERENCE_NON_POINTER_ERROR_MESSAGE = "Dereferencing non pointer variable";
+    private static final String SMALL_ARRAY_DIMENSION_ERROR_MESSAGE = "Array dimension is too small for";
 
     private final ErrorReporter reporter;
     private final ParseTreeProperty<Type> annotatedTypes;
@@ -116,7 +117,14 @@ public class solSemanticChecker extends SolBaseListener
         ScopeTree.Variable var = this.scope.getVariable(variableName);
         if (this.checkIdentifierError(ctx, variableName, var))
             return;
-        this.annotatedTypes.put(ctx, new Type(var.scopedType().type(), var.scopedType().refDepth() + 1));
+        Type varType = var.scopedType();
+        if (varType.isArr())
+        {
+            this.reporter.reportError(ctx, TYPE_MISMATCH_ERROR_MESSAGE);
+            return;
+        }
+
+        this.annotatedTypes.put(ctx, new Type(varType.type(), varType.refDepth() + 1, varType.arrDimension()));
     }
 
     @Override
@@ -126,13 +134,61 @@ public class solSemanticChecker extends SolBaseListener
         ScopeTree.Variable var = this.scope.getVariable(variableName);
         if (this.checkIdentifierError(ctx, variableName, var))
             return;
+        Type varType = var.scopedType();
+        if (varType.isArr())
+        {
+            this.reporter.reportError(ctx, TYPE_MISMATCH_ERROR_MESSAGE);
+            return;
+        }
         if (ctx.DREF().size() > var.scopedType().refDepth())
         {
             this.reporter.reportError(ctx, DEREFERENCE_NON_POINTER_ERROR_MESSAGE);
             return;
         }
 
-        this.annotatedTypes.put(ctx, new Type(var.scopedType().type(), var.scopedType().refDepth() - ctx.DREF().size()));
+        int newRefDepth = varType.refDepth() - ctx.DREF().size();
+        this.annotatedTypes.put(ctx, new Type(varType.type(), newRefDepth, varType.arrDimension()));
+    }
+
+    @Override
+    public void exitArrayAccess(SolParser.ArrayAccessContext ctx)
+    {
+        String variableName = ctx.IDENTIFIER().getText();
+        ScopeTree.Variable var = this.scope.getVariable(variableName);
+        if (this.checkIdentifierError(ctx, variableName, var))
+            return;
+        Type varType = var.scopedType();
+        if (this.checkArrayAccessErrors(ctx, ctx.expr(), varType))
+            return;
+
+        int newArrDimension = varType.arrDimension() - ctx.expr().size();
+        this.annotatedTypes.put(ctx, new Type(varType.type(), varType.refDepth(), newArrDimension));
+    }
+
+    private boolean checkArrayAccessErrors(ParserRuleContext ctx, List<SolParser.ExprContext> indicesExpr, Type varType)
+    {
+        boolean hasError = false;
+        if (!varType.isArr())
+        {
+            this.reporter.reportError(ctx, TYPE_MISMATCH_ERROR_MESSAGE);
+            hasError = true;
+        }
+        if (indicesExpr.size() > varType.arrDimension())
+        {
+            this.reporter.reportError(ctx, SMALL_ARRAY_DIMENSION_ERROR_MESSAGE);
+            hasError = true;
+        }
+        for (SolParser.ExprContext expr : indicesExpr)
+        {
+            Type exprType = this.annotatedTypes.get(expr);
+            if (exprType.type() != Integer.class || exprType.isRef())
+            {
+                this.reporter.reportError(expr, TYPE_MISMATCH_ERROR_MESSAGE);
+                hasError = true;
+            }
+        }
+
+        return hasError;
     }
 
     @Override
@@ -349,7 +405,7 @@ public class solSemanticChecker extends SolBaseListener
     @Override
     public void enterDeclaration(SolParser.DeclarationContext ctx)
     {
-        this.annotatedTypes.put(ctx, Type.getReferenceType(ctx.type.getText(), ctx.REF().size()));
+        this.annotatedTypes.put(ctx, Type.getType(ctx.type.getText(), ctx.REF().size(), ctx.INT().size()));
     }
 
     @Override
@@ -357,10 +413,11 @@ public class solSemanticChecker extends SolBaseListener
     {
         if (ctx.IDENTIFIER() == null)
             return;
+
         String variableName = ctx.IDENTIFIER().getText();
+        Type variableType = this.annotatedTypes.get(ctx.getParent());
         if (this.checkVariableDeclarationsErrors(ctx, variableName))
             return;
-        Type variableType = this.annotatedTypes.get(ctx.getParent());
         if (variableType == null)
             throw new InternalError("Variable has no type after declaration? Shouldn't happen");
 
@@ -370,18 +427,21 @@ public class solSemanticChecker extends SolBaseListener
             if (exprType != null && !compatibleTypes(variableType, exprType))
                 this.reporter.reportError(ctx, TYPE_MISMATCH_ERROR_MESSAGE);
         }
-        this.scope.putVariable(variableName, variableType);
+
+        int memSize = variableType.isArr() ? getArrayBufferSize((SolParser.DeclarationContext) ctx.getParent()) : 1;
+        this.scope.putVariable(variableName, variableType, memSize);
+    }
+
+    private static int getArrayBufferSize(SolParser.DeclarationContext ctx)
+    {
+        return ctx.INT().stream().map(num -> Integer.parseInt(num.getText()))
+                .reduce(1, (accumulator, num) -> accumulator * num) + 1;
     }
 
     private boolean checkVariableDeclarationsErrors(SolParser.DeclarationAssignContext ctx, String variableName)
     {
         boolean hasError = false;
-        if (this.functions.containsKey(variableName))
-        {
-            this.reporter.reportError(ctx, FUNCTION_ID_ERROR_MESSAGE);
-            hasError = true;
-        }
-        else if (this.scope.containsVariableLocal(variableName))
+        if (this.scope.containsVariableLocal(variableName))
         {
             this.reporter.reportError(ctx, DECLARED_VAR_ERROR_MESSAGE);
             hasError = true;
@@ -402,13 +462,14 @@ public class solSemanticChecker extends SolBaseListener
     {
         if (ctx.IDENTIFIER() == null)
             return;
+
         String variableName = ctx.IDENTIFIER().getText();
         if (this.checkVariableAssignmentErrors(ctx, variableName))
             return;
         Type variableType = this.getAssignVariableType(ctx, variableName);
+        Type exprType = this.annotatedTypes.get(ctx.expr(ctx.expr().size() - 1));
         if (variableType == null)
             return;
-        Type exprType = this.annotatedTypes.get(ctx.expr());
         if (exprType == null)
             return;
 
@@ -418,32 +479,32 @@ public class solSemanticChecker extends SolBaseListener
             this.reporter.reportError(ctx, TYPE_MISMATCH_ERROR_MESSAGE);
     }
 
-    private Type getAssignVariableType(SolParser.AssignContext ctx, String variableName)
-    {
-        Type variableType = this.scope.getVariable(variableName).scopedType();
-        if (ctx.DREF().size() > variableType.refDepth())
-        {
-            this.reporter.reportError(ctx, DEREFERENCE_NON_POINTER_ERROR_MESSAGE);
-            return null;
-        }
-
-        return ctx.DREF().isEmpty() ? variableType : new Type(variableType.type(), variableType.refDepth() - ctx.DREF().size());
-    }
-
     private boolean checkVariableAssignmentErrors(SolParser.AssignContext ctx, String variableName)
     {
         boolean hasError = false;
-        if (this.functions.containsKey(variableName))
-        {
-            this.reporter.reportError(ctx, FUNCTION_ID_ERROR_MESSAGE);
-            hasError = true;
-        }
-        else if (!this.scope.containsVariable(variableName))
+        if (!this.scope.containsVariable(variableName))
         {
             this.reporter.reportError(ctx, UNDECLARED_VAR_ERROR_MESSAGE);
             hasError = true;
         }
         return hasError;
+    }
+
+    private Type getAssignVariableType(SolParser.AssignContext ctx, String variableName)
+    {
+        Type variableType = this.scope.getVariable(variableName).scopedType();
+        List<SolParser.ExprContext> indices = ctx.expr().subList(0, ctx.expr().size() - 1);
+        if (ctx.DREF().size() > variableType.refDepth())
+        {
+            this.reporter.reportError(ctx, DEREFERENCE_NON_POINTER_ERROR_MESSAGE);
+            return null;
+        }
+        if (this.checkArrayAccessErrors(ctx, indices, variableType))
+            return null;
+
+        int newRefDepth = variableType.refDepth() - ctx.DREF().size();
+        int newArrDimension = variableType.arrDimension() - indices.size();
+        return ctx.DREF().isEmpty() ? variableType : new Type(variableType.type(), newRefDepth, newArrDimension);
     }
 
     @Override
@@ -582,10 +643,11 @@ public class solSemanticChecker extends SolBaseListener
         ParserRuleContext parent = ctx.getParent();
         if (parent instanceof SolParser.FunctionDeclarationContext) // Because we are using a listener we have to add the argument types after the created scope
         {
-           List<SolParser.ArgumentContext> args = ((SolParser.FunctionDeclarationContext) parent).argument();
-           this.scope.offset(-args.size());
-           args.forEach((arg) -> this.scope.putVariable(arg.IDENTIFIER().getText(), Type.getReferenceType(arg.type.getText(), arg.REF().size())));
-           this.scope.offset(2); // Offset to compensate for frame pointer and return address on execution stack
+            int callFrameSize = 2;
+            List<SolParser.ArgumentContext> args = ((SolParser.FunctionDeclarationContext) parent).argument();
+            this.scope.offset(-args.size());
+            args.forEach((arg) -> this.scope.putVariable(arg.IDENTIFIER().getText(), Type.getType(arg.type.getText(), arg.REF().size(), arg.E_ARRAY().size())));
+            this.scope.offset(callFrameSize); // Offset to compensate for frame pointer and return address on execution stack
         }
     }
 

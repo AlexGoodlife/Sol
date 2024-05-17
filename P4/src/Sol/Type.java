@@ -2,11 +2,6 @@ package Sol;
 
 public record Type(Class<?> type, int refDepth, int arrDimension)
 {
-    public Type(Class<?> type, int refDepth)
-    {
-        this(type, refDepth, 0);
-    }
-
     public Type(Class<?> type)
     {
         this(type, 0, 0);
@@ -38,11 +33,6 @@ public record Type(Class<?> type, int refDepth, int arrDimension)
     public static Type getPrimitiveType(String type)
     {
         return getType(type, 0, 0);
-    }
-
-    public static Type getReferenceType(String type, int refDepth)
-    {
-        return getType(type, refDepth, 0);
     }
 
     @Override
