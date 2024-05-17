@@ -1,7 +1,26 @@
-				galloc 120
-				call _l5
+				galloc 7
+				iconst 0
+				gref
+				gstore 0
+				iconst 3
+				gref
+				gstore 1
+				iconst 5
+				gref
+				gstore 2
+				call _l13
 				halt
-				lalloc 5
 				ret 1
-_l5:			lalloc 727
+_l13:			gload 0
+				iconst 0
+				iconst 1
+				iadd
+				radd
+				dref
+				iconst 0
+				iconst 1
+				iadd
+				radd
+				dref
+				iprint
 				ret 0

@@ -7,6 +7,7 @@ import org.antlr.v4.runtime.tree.*;
 
 import java.util.HashMap;
 import java.util.List;
+import java.util.function.BinaryOperator;
 
 public class solSemanticChecker extends SolBaseListener
 {
@@ -434,8 +435,13 @@ public class solSemanticChecker extends SolBaseListener
 
     private static int getArrayBufferSize(SolParser.DeclarationContext ctx)
     {
-        return ctx.INT().stream().map(num -> Integer.parseInt(num.getText()))
-                .reduce(1, (accumulator, num) -> accumulator * num) + 1;
+        List<Integer> dimensions = ctx.INT().stream().map(num-> Integer.valueOf(num.getText())).toList();
+        BinaryOperator<Integer> multiplyAndAccumulate = (accumulator, num) -> accumulator * num;
+
+        int numElements = dimensions.size() == 1 ? 0 : dimensions.stream().reduce(1,multiplyAndAccumulate);
+        int subListSize = dimensions.size() == 1 ? dimensions.size() : dimensions.size() -1;
+        int numAddresses = dimensions.subList(0, subListSize).stream().reduce(1,multiplyAndAccumulate);
+        return numAddresses + numElements+1;
     }
 
     private boolean checkVariableDeclarationsErrors(SolParser.DeclarationAssignContext ctx, String variableName)

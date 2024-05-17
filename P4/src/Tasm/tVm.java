@@ -4,6 +4,7 @@ import ErrorUtils.RuntimeError;
 import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Objects;
 import java.util.Stack;
 import java.util.stream.IntStream;
 
@@ -426,7 +427,7 @@ public class tVm
 
                 selectedMemoryChunk.set(poppedAddress.address, second);
             }
-            case REQ, RNEQ -> this.executeAddressStackInstruction(second, first, instruction);
+            case REQ, RNEQ ,RADD-> this.executeAddressStackInstruction(second, first, instruction);
         }
     }
 
@@ -510,7 +511,11 @@ public class tVm
                 case REQ -> this.executionStack.push(new Value(leftAddress.equals(rightAddress)));
                 case RNEQ -> this.executionStack.push(new Value(!leftAddress.equals(rightAddress)));
             }
-        else
+        else if (right.getValue() instanceof Integer rightInt && left.getValue() instanceof Address leftAddress){
+            if ((instruction.getInstruction()) == Instruction.Code.RADD) {
+                this.executionStack.push(new Value(new Address(leftAddress.address + rightInt,leftAddress.isGlobal)));
+            }
+        } else
             this.typeError(instruction, Boolean.class);
     }
 

@@ -10,7 +10,9 @@ import java.io.*;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Stack;
+import java.util.function.BinaryOperator;
 
 /* Why use a visitor? Because we want to know if we need to insert conversion instructions prior to visiting any upcoming nodes in an expression.
 * With a listener this would be much harder to do in a clean manner,
@@ -307,6 +309,35 @@ public class solCompiler extends SolBaseVisitor<Void>
                 this.instructions.add(new Instruction(Instruction.Code.ITOD));
             this.storeVariable(ctx.IDENTIFIER().getText());
         }
+        if (ctx.expr() == null && this.annotatedTypes.get(ctx.getParent()).isArr()){
+
+            SolParser.DeclarationContext parent = (SolParser.DeclarationContext) ctx.getParent();
+            ScopeTree.Variable var = this.scope.getVariable(ctx.IDENTIFIER().getText());
+            int startIndex = var.index();
+
+            BinaryOperator<Integer> multiplyAndAccumulate = (accumulator, num) -> accumulator * num;
+            List<Integer> dimensions = parent.INT().stream().map(num-> Integer.valueOf(num.getText())).toList();
+
+            int subListSize = dimensions.size() == 1 ? 0 : dimensions.size() -1;
+            int numAddresses = dimensions.subList(0, subListSize).stream().reduce(1,multiplyAndAccumulate);
+            numAddresses = numAddresses == 1 ? 0 : numAddresses;
+            int lastDimensionSize = dimensions.get(dimensions.size()-1);
+
+            Instruction.Code storeCode = var.global() ? Instruction.Code.GSTORE : Instruction.Code.LSTORE;
+            Instruction.Code refCode = var.global() ? Instruction.Code.GREF : Instruction.Code.LREF;
+
+            // Initial pointer for array
+            this.instructions.add(new Instruction(Instruction.Code.ICONST, startIndex));
+            this.instructions.add(new Instruction(refCode));
+            this.instructions.add(new Instruction(storeCode,startIndex));
+
+            for(int i = 0; i < numAddresses; i++){
+                int address = (startIndex+1) + (numAddresses) + lastDimensionSize*i;
+                this.instructions.add(new Instruction(Instruction.Code.ICONST,address));
+                this.instructions.add(new Instruction(refCode));
+                this.instructions.add(new Instruction(storeCode, (startIndex+1) + i));
+            }
+        }
         return null;
     }
 
@@ -341,6 +372,24 @@ public class solCompiler extends SolBaseVisitor<Void>
         if (isVariableDouble && isExprInteger && isNotRef)
             this.instructions.add(new Instruction(Instruction.Code.ITOD));
 
+        ScopeTree.Variable var = this.scope.getVariable(ctx.IDENTIFIER().getText());
+        if(var.scopedType().isArr()){
+            this.loadVariable(ctx.IDENTIFIER().getText());
+            visit(ctx.expr(0));
+            this.instructions.add(new Instruction(Instruction.Code.ICONST,1));
+            this.instructions.add(new Instruction(Instruction.Code.IADD));
+            this.instructions.add(new Instruction(Instruction.Code.RADD));
+            this.instructions.add(new Instruction(Instruction.Code.DREF));
+            for(int i = 1; i < ctx.expr().size()-1;i++){
+                visit(ctx.expr(i));
+                this.instructions.add(new Instruction(Instruction.Code.ICONST,1));
+                this.instructions.add(new Instruction(Instruction.Code.IADD));
+                this.instructions.add(new Instruction(Instruction.Code.RADD));
+                this.instructions.add(new Instruction(Instruction.Code.DREF));
+            }
+            this.visit(ctx.expr(ctx.expr().size()-1));
+            return null;
+        }
         if (ctx.DREF().isEmpty())
             this.storeVariable(ctx.IDENTIFIER().getText());
         else
@@ -551,6 +600,24 @@ public class solCompiler extends SolBaseVisitor<Void>
                 this.instructions.add(new Instruction(Instruction.Code.ITOD));
         }
         this.addFunctionJumps(ctx.IDENTIFIER().getText());
+        return null;
+    }
+
+    @Override
+    public Void visitArrayAccess(SolParser.ArrayAccessContext ctx){
+        this.loadVariable(ctx.IDENTIFIER().getText());
+        visit(ctx.expr(0));
+        this.instructions.add(new Instruction(Instruction.Code.ICONST,1));
+        this.instructions.add(new Instruction(Instruction.Code.IADD));
+        this.instructions.add(new Instruction(Instruction.Code.RADD));
+        this.instructions.add(new Instruction(Instruction.Code.DREF));
+        for(int i = 1; i < ctx.expr().size();i++){
+            visit(ctx.expr(i));
+            this.instructions.add(new Instruction(Instruction.Code.ICONST,1));
+            this.instructions.add(new Instruction(Instruction.Code.IADD));
+            this.instructions.add(new Instruction(Instruction.Code.RADD));
+            this.instructions.add(new Instruction(Instruction.Code.DREF));
+        }
         return null;
     }
 
