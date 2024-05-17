@@ -27,14 +27,7 @@ public record Type(Class<?> type, int refDepth)
 
     public static Type getReferenceType(String type, int refDepth)
     {
-        switch (type)
-        {
-            case "int" -> { return new Type(Integer.class, refDepth); }
-            case "real" -> { return new Type(Double.class, refDepth); }
-            case "string" -> { return new Type(String.class, refDepth); }
-            case "bool" -> { return new Type(Boolean.class, refDepth); }
-            default -> throw new InternalError("Shouldn't happen...");
-        }
+        return new Type(getPrimitiveType(type).type, refDepth);
     }
 
     @Override

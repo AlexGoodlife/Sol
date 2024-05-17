@@ -376,12 +376,7 @@ public class solSemanticChecker extends SolBaseListener
     private boolean checkVariableDeclarationsErrors(SolParser.DeclarationAssignContext ctx, String variableName)
     {
         boolean hasError = false;
-        if (this.functions.containsKey(variableName))
-        {
-            this.reporter.reportError(ctx, FUNCTION_ID_ERROR_MESSAGE);
-            hasError = true;
-        }
-        else if (this.scope.containsVariableLocal(variableName))
+        if (this.scope.containsVariableLocal(variableName))
         {
             this.reporter.reportError(ctx, DECLARED_VAR_ERROR_MESSAGE);
             hasError = true;
@@ -433,12 +428,7 @@ public class solSemanticChecker extends SolBaseListener
     private boolean checkVariableAssignmentErrors(SolParser.AssignContext ctx, String variableName)
     {
         boolean hasError = false;
-        if (this.functions.containsKey(variableName))
-        {
-            this.reporter.reportError(ctx, FUNCTION_ID_ERROR_MESSAGE);
-            hasError = true;
-        }
-        else if (!this.scope.containsVariable(variableName))
+        if (!this.scope.containsVariable(variableName))
         {
             this.reporter.reportError(ctx, UNDECLARED_VAR_ERROR_MESSAGE);
             hasError = true;
