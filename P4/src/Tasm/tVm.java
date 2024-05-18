@@ -395,7 +395,11 @@ public class tVm
                     List<Value> selectedMemoryChunk = poppedAddress.isGlobal ? this.globalMemory : this.executionStack;
                     if (poppedAddress.address < 0 || poppedAddress.address >= selectedMemoryChunk.size())
                         this.indexOutOfBoundsError(instruction, this.executionStack.size(), poppedAddress.address);
-                    this.executionStack.push(selectedMemoryChunk.get(poppedAddress.address));
+                    Value v = selectedMemoryChunk.get(poppedAddress.address);
+                    if (v.getValue() == null)
+                        this.genericError(instruction, "Dereferencing reference to NIL value");
+
+                    this.executionStack.push(v);
                 }
             }
         else
