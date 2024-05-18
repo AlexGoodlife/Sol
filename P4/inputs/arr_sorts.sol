@@ -15,9 +15,12 @@ end
 
 void print_arr(int[] arr, int size)
 begin
+    string arr_s = "[" + arr[0];
     int i = 0;
-    for i = 0 to size - 1 do
-        print arr[i];
+    for i = 1 to size - 1 do
+        arr_s = arr_s + ", " + arr[i];
+    arr_s = arr_s + "]";
+    print arr_s;
 end
 
 void isort(int[] arr, int size)

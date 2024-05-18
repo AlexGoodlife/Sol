@@ -1,4 +1,4 @@
-				call _l143
+				call _l164
 				halt
 _l2:			lalloc 2
 				lload -1
@@ -41,45 +41,66 @@ _l37:			lload 2
 				lstore 2
 				jump _l7
 _l42:			ret 3
-_l43:			lalloc 1
-				iconst 0
-				lstore 2
-				iconst 0
-				lstore 2
-_l48:			lload -1
-				iconst 1
-				isub
-				lload 2
-				ilt
-				jumpt _l66
+_l43:			lalloc 2
+				sconst "["
 				lload -2
-				lload 2
+				iconst 0
 				iconst 1
 				iadd
 				radd
 				dref
-				iprint
+				itos
+				sadd
+				lstore 2
+				iconst 0
+				lstore 3
+				iconst 1
+				lstore 3
+_l58:			lload -1
+				iconst 1
+				isub
+				lload 3
+				ilt
+				jumpt _l81
 				lload 2
+				sconst ", "
+				sadd
+				lload -2
+				lload 3
 				iconst 1
 				iadd
+				radd
+				dref
+				itos
+				sadd
 				lstore 2
-				jump _l48
-_l66:			ret 2
-_l67:			lalloc 2
+				lload 3
+				iconst 1
+				iadd
+				lstore 3
+				jump _l58
+_l81:			lload 2
+				sconst "]"
+				sadd
+				lstore 2
+				lload 2
+				sprint
+				ret 2
+_l88:			lalloc 2
 				iconst 1
 				lstore 2
-_l70:			lload -1
+_l91:			lload -1
 				iconst 1
 				isub
 				lload 2
 				ilt
-				jumpt _l142
+				jumpt _l163
 				lload 2
 				lstore 3
-_l78:			iconst 0
+_l99:			iconst 0
 				lload 3
 				ilt
-				jumpf _l137
+				jumpf _l158
 				lload -2
 				lload 3
 				iconst 1
@@ -95,7 +116,7 @@ _l78:			iconst 0
 				radd
 				dref
 				ilt
-				jumpf _l135
+				jumpf _l156
 				lalloc 1
 				lload -2
 				lload 3
@@ -132,16 +153,16 @@ _l78:			iconst 0
 				isub
 				lstore 3
 				pop 1
-				jump _l136
-_l135:			jump _l137
-_l136:			jump _l78
-_l137:			lload 2
+				jump _l157
+_l156:			jump _l158
+_l157:			jump _l99
+_l158:			lload 2
 				iconst 1
 				iadd
 				lstore 2
-				jump _l70
-_l142:			ret 2
-_l143:			lalloc 11
+				jump _l91
+_l163:			ret 2
+_l164:			lalloc 11
 				iconst 2
 				lref
 				lstore 2
@@ -156,7 +177,7 @@ _l143:			lalloc 11
 				call _l43
 				lload 2
 				iconst 10
-				call _l67
+				call _l88
 				sconst "\nAfter: "
 				sprint
 				lload 2

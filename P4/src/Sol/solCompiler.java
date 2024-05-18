@@ -331,7 +331,7 @@ public class solCompiler extends SolBaseVisitor<Void>
         this.instructions.add(new Instruction(refCode));
         this.instructions.add(new Instruction(storeCode, startIndex));
 
-        List<Integer> arrDimensions = arrDeclaration.INT().stream().map(num-> Integer.valueOf(num.getText())).toList();
+        List<Integer> arrDimensions = arrDeclaration.INT().stream().map(num -> Integer.valueOf(num.getText())).toList();
         int numAddresses = this.calculateNumOfAddresses(arrDimensions);
         int lastDimensionSize = arrDimensions.get(arrDimensions.size() - 1);
         for (int i = 0; i < numAddresses; i++)

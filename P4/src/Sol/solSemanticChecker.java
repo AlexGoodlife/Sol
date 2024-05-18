@@ -24,6 +24,7 @@ public class solSemanticChecker extends SolBaseListener
     private static final String POINTER_OPERATION_ERROR_MESSAGE = "Pointer operation is not allowed";
     private static final String DEREFERENCE_NON_POINTER_ERROR_MESSAGE = "Dereferencing non pointer variable";
     private static final String SMALL_ARRAY_DIMENSION_ERROR_MESSAGE = "Array dimension is too small for";
+    private static final String DEREFERENCE_ARRAY_ELEMENT_ERROR = "Dereferencing array element on";
 
     private final ErrorReporter reporter;
     private final ParseTreeProperty<Type> annotatedTypes;
@@ -500,6 +501,11 @@ public class solSemanticChecker extends SolBaseListener
         ScopeTree.Variable var = this.scope.getVariable(variableName);
         Type variableType = var.scopedType();
         List<SolParser.ExprContext> indices = ctx.expr().subList(0, ctx.expr().size() - 1);
+        if (!ctx.DREF().isEmpty() && ctx.expr().size() > 1)
+        {
+            this.reporter.reportError(ctx, DEREFERENCE_ARRAY_ELEMENT_ERROR);
+            return null;
+        }
         if (ctx.DREF().size() > variableType.refDepth())
         {
             this.reporter.reportError(ctx, DEREFERENCE_NON_POINTER_ERROR_MESSAGE);
@@ -510,7 +516,7 @@ public class solSemanticChecker extends SolBaseListener
 
         int newRefDepth = variableType.refDepth() - ctx.DREF().size();
         int newArrDimension = variableType.arrDimension() - indices.size();
-        return  new Type(variableType.type(), newRefDepth, newArrDimension);
+        return new Type(variableType.type(), newRefDepth, newArrDimension);
     }
 
     @Override
