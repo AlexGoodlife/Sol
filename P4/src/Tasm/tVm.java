@@ -4,7 +4,6 @@ import ErrorUtils.RuntimeError;
 import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 import java.util.Stack;
 import java.util.stream.IntStream;
 
@@ -427,7 +426,17 @@ public class tVm
 
                 selectedMemoryChunk.set(poppedAddress.address, second);
             }
-            case REQ, RNEQ ,RADD-> this.executeAddressStackInstruction(second, first, instruction);
+            case RADD -> {
+                if (!(first.getValue() instanceof Integer))
+                    this.typeError(instruction, Integer.class);
+                if (!(second.getValue() instanceof Address))
+                    this.typeError(instruction, Address.class);
+
+                Integer poppedInt = (Integer) first.getValue();
+                Address poppedAddress = (Address) second.getValue();
+                this.executionStack.push(new Value(new Address(poppedAddress.address + poppedInt, poppedAddress.isGlobal)));
+            }
+            case REQ, RNEQ -> this.executeAddressStackInstruction(second, first, instruction);
         }
     }
 
@@ -511,12 +520,8 @@ public class tVm
                 case REQ -> this.executionStack.push(new Value(leftAddress.equals(rightAddress)));
                 case RNEQ -> this.executionStack.push(new Value(!leftAddress.equals(rightAddress)));
             }
-        else if (right.getValue() instanceof Integer rightInt && left.getValue() instanceof Address leftAddress){
-            if ((instruction.getInstruction()) == Instruction.Code.RADD) {
-                this.executionStack.push(new Value(new Address(leftAddress.address + rightInt,leftAddress.isGlobal)));
-            }
-        } else
-            this.typeError(instruction, Boolean.class);
+        else
+            this.typeError(instruction, Address.class);
     }
 
     private void insufficientStackError(Instruction instruction)

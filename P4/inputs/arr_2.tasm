@@ -4,17 +4,12 @@ _l2:			lalloc 12
 				iconst 3
 				lref
 				lstore 3
-				lalloc 6
-				iconst 14
-				lref
-				lstore 14
-				pop 6
 				iconst 1
 				lstore 2
-_l13:			iconst 9
+_l8:			iconst 9
 				lload 2
 				ilt
-				jumpt _l29
+				jumpt _l24
 				lload 2
 				lload 3
 				lload 2
@@ -26,13 +21,13 @@ _l13:			iconst 9
 				iconst 1
 				iadd
 				lstore 2
-				jump _l13
-_l29:			iconst 1
+				jump _l8
+_l24:			iconst 1
 				lstore 2
-_l31:			iconst 9
+_l26:			iconst 9
 				lload 2
 				ilt
-				jumpt _l47
+				jumpt _l42
 				lload 3
 				lload 2
 				iconst 1
@@ -44,5 +39,5 @@ _l31:			iconst 9
 				iconst 1
 				iadd
 				lstore 2
-				jump _l31
-_l47:			ret 0
+				jump _l26
+_l42:			ret 0

@@ -169,11 +169,6 @@ public class solSemanticChecker extends SolBaseListener
     private boolean checkArrayAccessErrors(ParserRuleContext ctx, List<SolParser.ExprContext> indicesExpr, Type varType)
     {
         boolean hasError = false;
-        //if (!varType.isArr())
-        //{
-        //    this.reporter.reportError(ctx, TYPE_MISMATCH_ERROR_MESSAGE);
-        //    hasError = true;
-        //}
         if (indicesExpr.size() > varType.arrDimension())
         {
             this.reporter.reportError(ctx, SMALL_ARRAY_DIMENSION_ERROR_MESSAGE);
@@ -182,6 +177,8 @@ public class solSemanticChecker extends SolBaseListener
         for (SolParser.ExprContext expr : indicesExpr)
         {
             Type exprType = this.annotatedTypes.get(expr);
+            if (exprType == null)
+                continue;
             if (exprType.type() != Integer.class || exprType.isRef())
             {
                 this.reporter.reportError(expr, TYPE_MISMATCH_ERROR_MESSAGE);
@@ -398,6 +395,7 @@ public class solSemanticChecker extends SolBaseListener
             this.annotatedTypes.put(ctx, exprType);
     }
 
+    @Override
     public void exitParentheses(SolParser.ParenthesesContext ctx)
     {
         this.annotatedTypes.put(ctx, this.annotatedTypes.get(ctx.expr()));
@@ -438,10 +436,10 @@ public class solSemanticChecker extends SolBaseListener
         List<Integer> dimensions = ctx.INT().stream().map(num-> Integer.valueOf(num.getText())).toList();
         BinaryOperator<Integer> multiplyAndAccumulate = (accumulator, num) -> accumulator * num;
 
-        int numElements = dimensions.size() == 1 ? 0 : dimensions.stream().reduce(1,multiplyAndAccumulate);
-        int subListSize = dimensions.size() == 1 ? dimensions.size() : dimensions.size() -1;
-        int numAddresses = dimensions.subList(0, subListSize).stream().reduce(1,multiplyAndAccumulate);
-        return numAddresses + numElements+1;
+        int numElements = dimensions.size() == 1 ? 0 : dimensions.stream().reduce(1, multiplyAndAccumulate);
+        int subListSize = dimensions.size() == 1 ? dimensions.size() : dimensions.size() - 1;
+        int numAddresses = dimensions.subList(0, subListSize).stream().reduce(1, multiplyAndAccumulate);
+        return numAddresses + numElements + 1;
     }
 
     private boolean checkVariableDeclarationsErrors(SolParser.DeclarationAssignContext ctx, String variableName)
@@ -507,7 +505,7 @@ public class solSemanticChecker extends SolBaseListener
             this.reporter.reportError(ctx, DEREFERENCE_NON_POINTER_ERROR_MESSAGE);
             return null;
         }
-        if ( variableType.isArr() && this.checkArrayAccessErrors(ctx, indices, variableType))
+        if (variableType.isArr() && this.checkArrayAccessErrors(ctx, indices, variableType))
             return null;
 
         int newRefDepth = variableType.refDepth() - ctx.DREF().size();
