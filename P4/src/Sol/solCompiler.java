@@ -411,8 +411,7 @@ public class solCompiler extends SolBaseVisitor<Void>
         this.instructions.add(new Instruction(Instruction.Code.RADD));
         for (int i = 1; i < indexExpressions.size(); i++)
         {
-            if (i < indexExpressions.size() - 1)
-                this.instructions.add(new Instruction(Instruction.Code.DREF));
+            this.instructions.add(new Instruction(Instruction.Code.DREF));
             this.visit(indexExpressions.get(i));
             this.instructions.add(new Instruction(Instruction.Code.RADD));
         }

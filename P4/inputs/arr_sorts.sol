@@ -31,17 +31,19 @@ begin
         j = i;
         while j > 0 do
         begin
-            if arr[j - 1] > arr[j] then
-            begin
-                int temp = arr[j];
-                arr[j] = arr[j - 1];
-                arr[j - 1] = temp;
-                j = j - 1;
-            end
-            else
+            if arr[j - 1] <= arr[j] then
                 break;
+            arr_swap(arr, j, j - 1);
+            j = j - 1;
         end
     end
+end
+
+void arr_swap(int[] arr, int i, int j)
+begin
+    int temp = arr[i];
+    arr[i] = arr[j];
+    arr[j] = temp;
 end
 
 void main()

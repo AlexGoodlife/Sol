@@ -4,7 +4,7 @@ _l2:			lalloc 12
 				iconst 3
 				lref
 				lstore 3
-				iconst 1
+				iconst 0
 				lstore 2
 _l8:			iconst 9
 				lload 2
@@ -22,7 +22,7 @@ _l8:			iconst 9
 				iadd
 				lstore 2
 				jump _l8
-_l24:			iconst 1
+_l24:			iconst 0
 				lstore 2
 _l26:			iconst 9
 				lload 2

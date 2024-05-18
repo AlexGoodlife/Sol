@@ -1,4 +1,4 @@
-				call _l164
+				call _l165
 				halt
 _l2:			lalloc 2
 				lload -1
@@ -94,37 +94,13 @@ _l91:			lload -1
 				isub
 				lload 2
 				ilt
-				jumpt _l163
+				jumpt _l136
 				lload 2
 				lstore 3
 _l99:			iconst 0
 				lload 3
 				ilt
-				jumpf _l158
-				lload -2
-				lload 3
-				iconst 1
-				iadd
-				radd
-				dref
-				lload -2
-				lload 3
-				iconst 1
-				isub
-				iconst 1
-				iadd
-				radd
-				dref
-				ilt
-				jumpf _l156
-				lalloc 1
-				lload -2
-				lload 3
-				iconst 1
-				iadd
-				radd
-				dref
-				lstore 4
+				jumpf _l131
 				lload -2
 				lload 3
 				iconst 1
@@ -138,31 +114,56 @@ _l99:			iconst 0
 				iconst 1
 				iadd
 				radd
-				refstore
-				lload 4
-				lload -2
+				dref
+				ileq
+				jumpf _l120
+				jump _l131
+_l120:			lload -2
+				lload 3
 				lload 3
 				iconst 1
 				isub
-				iconst 1
-				iadd
-				radd
-				refstore
+				call _l137
 				lload 3
 				iconst 1
 				isub
 				lstore 3
-				pop 1
-				jump _l157
-_l156:			jump _l158
-_l157:			jump _l99
-_l158:			lload 2
+				jump _l99
+_l131:			lload 2
 				iconst 1
 				iadd
 				lstore 2
 				jump _l91
-_l163:			ret 2
-_l164:			lalloc 11
+_l136:			ret 2
+_l137:			lalloc 1
+				lload -3
+				lload -2
+				iconst 1
+				iadd
+				radd
+				dref
+				lstore 2
+				lload -3
+				lload -1
+				iconst 1
+				iadd
+				radd
+				dref
+				lload -3
+				lload -2
+				iconst 1
+				iadd
+				radd
+				refstore
+				lload 2
+				lload -3
+				lload -1
+				iconst 1
+				iadd
+				radd
+				refstore
+				ret 3
+_l165:			lalloc 11
 				iconst 2
 				lref
 				lstore 2

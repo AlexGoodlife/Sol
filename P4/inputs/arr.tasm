@@ -80,6 +80,7 @@ _l62:			iconst 1
 				iconst 1
 				iadd
 				radd
+				dref
 				iconst 0
 				radd
 				refstore
@@ -88,6 +89,7 @@ _l62:			iconst 1
 				iconst 1
 				iadd
 				radd
+				dref
 				iconst 0
 				radd
 				dref

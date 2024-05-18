@@ -1,0 +1,285 @@
+				call _l212
+				halt
+_l2:			lalloc 3
+				lload -1
+				lstore 4
+				iconst 0
+				lstore 2
+_l7:			lload -2
+				iconst 1
+				isub
+				lload 2
+				ilt
+				jumpt _l58
+				iconst 0
+				lstore 3
+_l15:			lload -2
+				iconst 1
+				isub
+				lload 3
+				ilt
+				jumpt _l53
+				lload 4
+				lload -3
+				lload 2
+				iconst 1
+				iadd
+				radd
+				dref
+				lload 3
+				radd
+				refstore
+				lload 4
+				iconst 2
+				imod
+				iconst 0
+				ieq
+				jumpf _l42
+				lload 4
+				iconst 2
+				idiv
+				lstore 4
+				jump _l48
+_l42:			iconst 3
+				lload 4
+				imult
+				iconst 1
+				iadd
+				lstore 4
+_l48:			lload 3
+				iconst 1
+				iadd
+				lstore 3
+				jump _l15
+_l53:			lload 2
+				iconst 1
+				iadd
+				lstore 2
+				jump _l7
+_l58:			ret 3
+_l59:			lalloc 2
+				iconst 0
+				lstore 2
+_l62:			lload -1
+				iconst 1
+				isub
+				lload 2
+				ilt
+				jumpt _l122
+				lalloc 1
+				sconst "["
+				lload -2
+				lload 2
+				iconst 1
+				iadd
+				radd
+				dref
+				iconst 0
+				radd
+				dref
+				itos
+				sadd
+				lstore 4
+				iconst 1
+				lstore 3
+_l84:			lload -1
+				iconst 1
+				isub
+				lload 3
+				ilt
+				jumpt _l110
+				lload 4
+				sconst ", "
+				sadd
+				lload -2
+				lload 2
+				iconst 1
+				iadd
+				radd
+				dref
+				lload 3
+				radd
+				dref
+				itos
+				sadd
+				lstore 4
+				lload 3
+				iconst 1
+				iadd
+				lstore 3
+				jump _l84
+_l110:			lload 4
+				sconst "]"
+				sadd
+				lstore 4
+				lload 4
+				sprint
+				pop 1
+				lload 2
+				iconst 1
+				iadd
+				lstore 2
+				jump _l62
+_l122:			ret 2
+_l123:			lalloc 3
+				iconst 0
+				lstore 2
+_l126:			lload -2
+				iconst 1
+				isub
+				lload 2
+				ilt
+				jumpt _l211
+				iconst 0
+				lstore 3
+_l134:			lload -2
+				iconst 1
+				isub
+				lload 3
+				ilt
+				jumpt _l206
+				iconst 0
+				lload -1
+				lload 2
+				iconst 1
+				iadd
+				radd
+				dref
+				lload 3
+				radd
+				refstore
+				iconst 0
+				lstore 4
+_l152:			lload -2
+				iconst 1
+				isub
+				lload 4
+				ilt
+				jumpt _l201
+				lload -1
+				lload 2
+				iconst 1
+				iadd
+				radd
+				dref
+				lload 3
+				radd
+				dref
+				lload -4
+				lload 2
+				iconst 1
+				iadd
+				radd
+				dref
+				lload 4
+				radd
+				dref
+				lload -3
+				lload 4
+				iconst 1
+				iadd
+				radd
+				dref
+				lload 3
+				radd
+				dref
+				imult
+				iadd
+				lload -1
+				lload 2
+				iconst 1
+				iadd
+				radd
+				dref
+				lload 3
+				radd
+				refstore
+				lload 4
+				iconst 1
+				iadd
+				lstore 4
+				jump _l152
+_l201:			lload 3
+				iconst 1
+				iadd
+				lstore 3
+				jump _l134
+_l206:			lload 2
+				iconst 1
+				iadd
+				lstore 2
+				jump _l126
+_l211:			ret 4
+_l212:			lalloc 63
+				iconst 2
+				lref
+				lstore 2
+				iconst 7
+				lref
+				lstore 3
+				iconst 11
+				lref
+				lstore 4
+				iconst 15
+				lref
+				lstore 5
+				iconst 19
+				lref
+				lstore 6
+				iconst 23
+				lref
+				lstore 23
+				iconst 28
+				lref
+				lstore 24
+				iconst 32
+				lref
+				lstore 25
+				iconst 36
+				lref
+				lstore 26
+				iconst 40
+				lref
+				lstore 27
+				iconst 44
+				lref
+				lstore 44
+				iconst 49
+				lref
+				lstore 45
+				iconst 53
+				lref
+				lstore 46
+				iconst 57
+				lref
+				lstore 47
+				iconst 61
+				lref
+				lstore 48
+				lload 2
+				iconst 4
+				iconst 10
+				call _l2
+				lload 2
+				iconst 4
+				call _l59
+				sconst "\n*\n"
+				sprint
+				lload 23
+				iconst 4
+				iconst 5
+				call _l2
+				lload 23
+				iconst 4
+				call _l59
+				sconst "\n=\n"
+				sprint
+				lload 2
+				lload 23
+				iconst 4
+				lload 44
+				call _l123
+				lload 44
+				iconst 4
+				call _l59
+				ret 0
