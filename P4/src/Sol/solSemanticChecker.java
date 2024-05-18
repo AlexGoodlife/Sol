@@ -169,11 +169,11 @@ public class solSemanticChecker extends SolBaseListener
     private boolean checkArrayAccessErrors(ParserRuleContext ctx, List<SolParser.ExprContext> indicesExpr, Type varType)
     {
         boolean hasError = false;
-        if (!varType.isArr())
-        {
-            this.reporter.reportError(ctx, TYPE_MISMATCH_ERROR_MESSAGE);
-            hasError = true;
-        }
+        //if (!varType.isArr())
+        //{
+        //    this.reporter.reportError(ctx, TYPE_MISMATCH_ERROR_MESSAGE);
+        //    hasError = true;
+        //}
         if (indicesExpr.size() > varType.arrDimension())
         {
             this.reporter.reportError(ctx, SMALL_ARRAY_DIMENSION_ERROR_MESSAGE);
@@ -498,19 +498,21 @@ public class solSemanticChecker extends SolBaseListener
 
     private Type getAssignVariableType(SolParser.AssignContext ctx, String variableName)
     {
-        Type variableType = this.scope.getVariable(variableName).scopedType();
+
+        ScopeTree.Variable var = this.scope.getVariable(variableName);
+        Type variableType = var.scopedType();
         List<SolParser.ExprContext> indices = ctx.expr().subList(0, ctx.expr().size() - 1);
         if (ctx.DREF().size() > variableType.refDepth())
         {
             this.reporter.reportError(ctx, DEREFERENCE_NON_POINTER_ERROR_MESSAGE);
             return null;
         }
-        if (this.checkArrayAccessErrors(ctx, indices, variableType))
+        if ( variableType.isArr() && this.checkArrayAccessErrors(ctx, indices, variableType))
             return null;
 
         int newRefDepth = variableType.refDepth() - ctx.DREF().size();
         int newArrDimension = variableType.arrDimension() - indices.size();
-        return ctx.DREF().isEmpty() ? variableType : new Type(variableType.type(), newRefDepth, newArrDimension);
+        return  new Type(variableType.type(), newRefDepth, newArrDimension);
     }
 
     @Override

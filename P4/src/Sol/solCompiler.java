@@ -379,15 +379,17 @@ public class solCompiler extends SolBaseVisitor<Void>
             this.instructions.add(new Instruction(Instruction.Code.ICONST,1));
             this.instructions.add(new Instruction(Instruction.Code.IADD));
             this.instructions.add(new Instruction(Instruction.Code.RADD));
-            this.instructions.add(new Instruction(Instruction.Code.DREF));
+            if(ctx.expr().size()-2 > 0) // Dont deref
+                this.instructions.add(new Instruction(Instruction.Code.DREF));
             for(int i = 1; i < ctx.expr().size()-1;i++){
                 visit(ctx.expr(i));
-                this.instructions.add(new Instruction(Instruction.Code.ICONST,1));
-                this.instructions.add(new Instruction(Instruction.Code.IADD));
+                //this.instructions.add(new Instruction(Instruction.Code.ICONST,1));
+                //this.instructions.add(new Instruction(Instruction.Code.IADD));
                 this.instructions.add(new Instruction(Instruction.Code.RADD));
+                if(i >= ctx.expr().size()-2) continue; // Skip last deref
                 this.instructions.add(new Instruction(Instruction.Code.DREF));
             }
-            this.visit(ctx.expr(ctx.expr().size()-1));
+            this.instructions.add(new Instruction(Instruction.Code.REFSTORE));
             return null;
         }
         if (ctx.DREF().isEmpty())
@@ -613,8 +615,6 @@ public class solCompiler extends SolBaseVisitor<Void>
         this.instructions.add(new Instruction(Instruction.Code.DREF));
         for(int i = 1; i < ctx.expr().size();i++){
             visit(ctx.expr(i));
-            this.instructions.add(new Instruction(Instruction.Code.ICONST,1));
-            this.instructions.add(new Instruction(Instruction.Code.IADD));
             this.instructions.add(new Instruction(Instruction.Code.RADD));
             this.instructions.add(new Instruction(Instruction.Code.DREF));
         }

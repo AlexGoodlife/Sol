@@ -1,26 +1,113 @@
-				galloc 7
+				galloc 10
 				iconst 0
 				gref
 				gstore 0
 				iconst 3
 				gref
-				gstore 1
-				iconst 5
+				gstore 3
+				iconst 6
 				gref
-				gstore 2
-				call _l13
+				gstore 4
+				iconst 8
+				gref
+				gstore 5
+				call _l62
 				halt
-				ret 1
-_l13:			gload 0
+_l15:			lalloc 3
+				iconst 2
+				lref
+				lstore 2
+				iconst 4
+				lload 2
 				iconst 0
 				iconst 1
 				iadd
 				radd
-				dref
+				refstore
+				iconst 5
+				lload 2
+				iconst 1
+				iconst 1
+				iadd
+				radd
+				refstore
+				lload 2
 				iconst 0
 				iconst 1
 				iadd
 				radd
 				dref
 				iprint
+				lload 2
+				iconst 1
+				iconst 1
+				iadd
+				radd
+				dref
+				iprint
+				lload -1
+				iconst 0
+				iconst 1
+				iadd
+				radd
+				dref
+				iprint
+				lload -1
+				iconst 1
+				iconst 1
+				iadd
+				radd
+				dref
+				iprint
+				ret 1
+_l62:			iconst 1
+				gload 0
+				iconst 0
+				iconst 1
+				iadd
+				radd
+				refstore
+				iconst 2
+				gload 0
+				iconst 1
+				iconst 1
+				iadd
+				radd
+				refstore
+				iconst 1
+				gload 3
+				iconst 0
+				iconst 1
+				iadd
+				radd
+				dref
+				iconst 0
+				radd
+				refstore
+				gload 3
+				iconst 0
+				iconst 1
+				iadd
+				radd
+				dref
+				iconst 0
+				radd
+				dref
+				iprint
+				gload 0
+				iconst 0
+				iconst 1
+				iadd
+				radd
+				dref
+				iprint
+				gload 0
+				iconst 1
+				iconst 1
+				iadd
+				radd
+				dref
+				iprint
+				gload 0
+				call _l15
 				ret 0
