@@ -1,0 +1,19 @@
+				call _l2
+				halt
+_l2:			iconst 3
+				call _l6
+				iprint
+				ret 0
+_l6:			lload -1
+				iconst 0
+				ieq
+				jumpf _l12
+				iconst 1
+				retval 1
+_l12:			lload -1
+				lload -1
+				iconst 1
+				isub
+				call _l6
+				imult
+				retval 1
