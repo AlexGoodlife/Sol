@@ -1,4 +1,0 @@
-iconst 2
-iconst 0
-idiv
-halt
