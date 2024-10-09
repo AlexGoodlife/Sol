@@ -113,7 +113,8 @@ Many more examples are in the inputs directory
 You can use both the assembler and Compiler and write code in stdin but they do come with flags and arguments you can pass
 
 Compiler: 
-```java -jar SolCompiler.jar [-i input_file] [-o output_file] [--asm] [--no-tasm]
+```
+java -jar SolCompiler.jar [-i input_file] [-o output_file] [--asm] [--no-tasm]
 ```
 Assembler: 
 ```
